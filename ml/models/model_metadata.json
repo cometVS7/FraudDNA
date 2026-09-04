@@ -1,0 +1,47 @@
+{
+  "model_type": "LightGBM Binary Classifier",
+  "algorithm": "lightgbm.LGBMClassifier",
+  "version": "0.1.0",
+  "feature_names": [
+    "amount",
+    "log_amount",
+    "customer_account_age_days",
+    "hour_of_day",
+    "day_of_week",
+    "is_night",
+    "merchant_cat_code",
+    "payment_method_code",
+    "cust_prior_tx_count",
+    "cust_prior_mean_amt",
+    "cust_amount_ratio",
+    "cust_hours_since_last",
+    "dev_prior_customers",
+    "dev_velocity_24h",
+    "ip_prior_customers",
+    "ip_velocity_24h",
+    "card_prior_customers",
+    "card_velocity_24h"
+  ],
+  "feature_count": 18,
+  "selected_validation_threshold": 0.37,
+  "validation_f1_at_threshold": 0.9872,
+  "cost_per_fp_inr": 350.0,
+  "hyperparameters": {
+    "n_estimators": 150,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "num_leaves": 31,
+    "class_weight": "balanced",
+    "random_state": 42
+  },
+  "dataset_summary": {
+    "total_records": 25000,
+    "train_size": 17500,
+    "val_size": 3750,
+    "test_size": 3750,
+    "train_fraud_rate": 0.0475,
+    "val_fraud_rate": 0.0315,
+    "test_fraud_rate": 0.0469,
+    "split_type": "Strict Chronological Temporal Split (70/15/15)"
+  }
+}
