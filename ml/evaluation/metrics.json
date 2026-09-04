@@ -1,0 +1,57 @@
+{
+  "evaluation_type": "Synthetic Held-Out Test Set Evaluation",
+  "held_out_test_size": 3750,
+  "actual_fraud_count": 176,
+  "predicted_fraud_count": 177,
+  "selected_operating_threshold": 0.37,
+  "metrics": {
+    "precision": 0.9944,
+    "recall": 1.0,
+    "f1_score": 0.9972,
+    "pr_auc": 1.0,
+    "roc_auc": 1.0,
+    "false_positive_rate": 0.0003
+  },
+  "confusion_matrix": {
+    "true_negatives": 3573,
+    "false_positives": 1,
+    "false_negatives": 0,
+    "true_positives": 176
+  },
+  "cost_and_financial_impact": {
+    "cost_per_false_positive_inr": 350.0,
+    "false_positive_count": 1,
+    "false_positive_monetary_cost_inr": 350.0,
+    "total_fraud_loss_exposure_inr": 2432457.54,
+    "fraud_prevented_amount_inr": 2432457.54,
+    "fraud_missed_amount_inr": 0.0,
+    "net_business_benefit_inr": 2432107.54
+  },
+  "breakdown_by_scenario": {
+    "coordinated_card_cycle": {
+      "total_count": 21,
+      "caught_count": 21,
+      "catch_rate": 1.0
+    },
+    "coordinated_device_ring": {
+      "total_count": 51,
+      "caught_count": 51,
+      "catch_rate": 1.0
+    },
+    "coordinated_ip_farm": {
+      "total_count": 45,
+      "caught_count": 45,
+      "catch_rate": 1.0
+    },
+    "individual_anomaly": {
+      "total_count": 59,
+      "caught_count": 59,
+      "catch_rate": 1.0
+    },
+    "legitimate": {
+      "total_count": 3574,
+      "caught_count": 1,
+      "catch_rate": 0.0003
+    }
+  }
+}
