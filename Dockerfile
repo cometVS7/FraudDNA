@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
 COPY backend/app ./app
+COPY ml ./ml
+COPY knowledge ./knowledge
 
 EXPOSE 8000
 

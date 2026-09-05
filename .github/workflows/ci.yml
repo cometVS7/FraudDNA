@@ -1,4 +1,4 @@
-name: FraudDNA Foundation CI
+name: FraudDNA CI
 
 on:
   push:
@@ -55,6 +55,10 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install
+
+      - name: ESLint
+        working-directory: ./frontend
+        run: npm run lint
 
       - name: TypeScript Type Check
         working-directory: ./frontend

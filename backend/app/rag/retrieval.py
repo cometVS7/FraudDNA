@@ -63,6 +63,11 @@ class RAGService:
         """Ingest all knowledge documents from directory into vector store."""
         path = Path(knowledge_dir)
         if not path.exists():
+            alt_path = Path("..") / path
+            if alt_path.exists():
+                path = alt_path
+
+        if not path.exists():
             return IngestResponse(
                 documents_ingested=0,
                 chunks_created=0,

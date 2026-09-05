@@ -60,6 +60,11 @@ class InvestigationService:
         if self._models_loaded:
             return
 
+        if not self.models_dir.exists():
+            alt_models = Path("..") / self.models_dir
+            if alt_models.exists():
+                self.models_dir = alt_models
+
         model_path = self.models_dir / "lightgbm_model.joblib"
         pipeline_path = self.models_dir / "feature_pipeline.joblib"
 
