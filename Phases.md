@@ -45,12 +45,15 @@ Do not implement fraud detection yet.
 - graceful degradation for missing components / isolated transactions
 - comprehensive automated test suite (35/35 passing)
 
-## Phase 4 — RAG
-- curated policies/cases
-- document ingestion
-- embeddings
-- pgvector retrieval
-- source metadata
+## Phase 4 — RAG [COMPLETED]
+- curated synthetic knowledge base (policies, guidelines, and historical cases)
+- deterministic document ingestion and section-aware chunking pipeline
+- pluggable embedding provider abstraction (deterministic local provider + external API adapter)
+- PostgreSQL + pgvector storage models with offline in-memory fallback
+- semantic retrieval service with top-k cosine similarity, metadata filtering, and deterministic tie-breaking
+- REST API endpoints (`POST /api/v1/rag/ingest`, `POST /api/v1/rag/search`, `GET /api/v1/rag/documents`, `GET /api/v1/rag/status`)
+- failure handling & graceful degradation without hallucinated evidence
+- comprehensive automated test suite (49/49 passing across entire backend)
 
 ## Phase 5 — AI Investigation Agent
 - bounded LangGraph workflow

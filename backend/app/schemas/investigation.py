@@ -86,7 +86,9 @@ class RelatedEntity(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     entity_type: str = Field(..., description="Entity type (customer, device, ip, card, merchant).")
-    entity_id: str = Field(..., description="Namespaced entity ID in the graph (e.g. device:dev_1).")
+    entity_id: str = Field(
+        ..., description="Namespaced entity ID in the graph (e.g. device:dev_1)."
+    )
     relationship: str = Field(
         ..., description="Relationship to transaction (e.g. transacted_from, used_payment_method)."
     )
@@ -154,7 +156,9 @@ class InvestigationResponse(BaseModel):
     )
     transaction_id: str = Field(..., description="Investigated transaction identifier.")
     risk_score: float = Field(..., description="ML model transaction risk score [0.0, 1.0].")
-    risk_level: RiskLevel = Field(..., description="Categorical risk level (low, medium, high, critical).")
+    risk_level: RiskLevel = Field(
+        ..., description="Categorical risk level (low, medium, high, critical)."
+    )
     risk_factors: list[RiskFactor] = Field(
         default_factory=list, description="Top XAI feature attribution factors."
     )
@@ -162,17 +166,20 @@ class InvestigationResponse(BaseModel):
         default_factory=list, description="Direct and neighboring entities in the FraudDNA graph."
     )
     related_transactions: list[RelatedTransaction] = Field(
-        default_factory=list, description="Related transactions connected via shared graph entities."
+        default_factory=list,
+        description="Related transactions connected via shared graph entities.",
     )
     cluster: ClusterInvestigationSummary | None = Field(
         None, description="FraudDNA cluster context if transaction belongs to a detected cluster."
     )
     evidence: list[InvestigationEvidence] = Field(
-        default_factory=list, description="Deterministic evidence items synthesized from all signals."
+        default_factory=list,
+        description="Deterministic evidence items synthesized from all signals.",
     )
     status: InvestigationStatus = Field(
         InvestigationStatus.COMPLETED, description="Execution status of the investigation."
     )
     generated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="UTC timestamp when investigation was synthesized."
+        default_factory=datetime.utcnow,
+        description="UTC timestamp when investigation was synthesized.",
     )

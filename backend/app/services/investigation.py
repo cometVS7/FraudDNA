@@ -111,9 +111,7 @@ class InvestigationService:
         )
 
         # Overall Status
-        status = (
-            InvestigationStatus.COMPLETED if xai_status_ok else InvestigationStatus.DEGRADED
-        )
+        status = InvestigationStatus.COMPLETED if xai_status_ok else InvestigationStatus.DEGRADED
 
         response = InvestigationResponse(
             investigation_id=investigation_id,
@@ -153,9 +151,7 @@ class InvestigationService:
             return RiskLevel.HIGH
         return RiskLevel.CRITICAL
 
-    def _extract_risk_score(
-        self, transaction_id: str, row_dict: dict[str, Any] | None
-    ) -> float:
+    def _extract_risk_score(self, transaction_id: str, row_dict: dict[str, Any] | None) -> float:
         """Extract risk score from graph node attributes or compute from ML model."""
         tx_node = make_node_id(EntityType.TRANSACTION, transaction_id)
         if tx_node in self.graph_service.graph:
@@ -307,9 +303,7 @@ class InvestigationService:
         related_transactions.sort(key=lambda t: (-t.risk_score, -t.amount))
         return related_entities, related_transactions[:20]
 
-    def _extract_cluster_context(
-        self, transaction_id: str
-    ) -> ClusterInvestigationSummary | None:
+    def _extract_cluster_context(self, transaction_id: str) -> ClusterInvestigationSummary | None:
         """Lookup cluster details for the transaction if present in a cluster."""
         cluster_id = self.graph_service.get_cluster_id_for_transaction(transaction_id)
         if not cluster_id:
@@ -428,7 +422,9 @@ class InvestigationService:
                                 f"IP address '{entity.entity_id}' is shared across "
                                 f"{cust_count} distinct customer accounts."
                             ),
-                            severity=EvidenceSeverity.HIGH if cust_count >= 5 else EvidenceSeverity.MEDIUM,
+                            severity=EvidenceSeverity.HIGH
+                            if cust_count >= 5
+                            else EvidenceSeverity.MEDIUM,
                             source=EvidenceSource.FRAUDDNA_GRAPH,
                         )
                     )
