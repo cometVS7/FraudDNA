@@ -55,12 +55,19 @@ export default function SimulationPage() {
         new Set([...targetThresholds, fraudThreshold])
       ).sort((a, b) => a - b);
 
-      const configs: SimulationConfig[] = sortedThresholds.map((t) => ({
-        fraud_threshold: t,
-        review_threshold: reviewThreshold,
-        cost_per_false_positive: costPerFP,
-        review_capacity: reviewCapacity,
-      }));
+      const configs: SimulationConfig[] = sortedThresholds.map((t) => {
+        const effectiveReviewThreshold =
+          reviewThreshold < t
+            ? reviewThreshold
+            : Math.max(0.01, Math.min(reviewThreshold, Number((t - 0.01).toFixed(2))));
+
+        return {
+          fraud_threshold: t,
+          review_threshold: effectiveReviewThreshold,
+          cost_per_false_positive: costPerFP,
+          review_capacity: reviewCapacity,
+        };
+      });
 
       const result = await compareSimulations(configs);
       setComparison(result);
@@ -153,7 +160,14 @@ export default function SimulationPage() {
                 max={0.95}
                 step={0.01}
                 value={fraudThreshold}
-                onChange={(e) => setFraudThreshold(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  const newFraud = parseFloat(e.target.value);
+                  setFraudThreshold(newFraud);
+                  if (reviewThreshold >= newFraud) {
+                    const safeReview = Math.max(0.01, Number((newFraud - 0.01).toFixed(2)));
+                    setReviewThreshold(safeReview);
+                  }
+                }}
                 className="w-full accent-[#CC9166] cursor-pointer"
               />
               <div className="flex justify-between text-[9px] font-mono text-[#5E616E] mt-1">
@@ -170,16 +184,23 @@ export default function SimulationPage() {
               </div>
               <input
                 type="range"
-                min={0.05}
-                max={Math.min(0.9, fraudThreshold)}
+                min={0.01}
+                max={Math.max(0.01, Number((fraudThreshold - 0.01).toFixed(2)))}
                 step={0.01}
-                value={reviewThreshold}
-                onChange={(e) => setReviewThreshold(parseFloat(e.target.value))}
+                value={Math.min(
+                  reviewThreshold,
+                  Math.max(0.01, Number((fraudThreshold - 0.01).toFixed(2)))
+                )}
+                onChange={(e) => {
+                  const maxAllowed = Math.max(0.01, Number((fraudThreshold - 0.01).toFixed(2)));
+                  const val = Math.min(parseFloat(e.target.value), maxAllowed);
+                  setReviewThreshold(val);
+                }}
                 className="w-full accent-[#AE9357] cursor-pointer"
               />
               <div className="flex justify-between text-[9px] font-mono text-[#5E616E] mt-1">
-                <span>0.05 (Flag Early)</span>
-                <span>{fraudThreshold.toFixed(2)} (Cap)</span>
+                <span>0.01 (Flag Early)</span>
+                <span>{Math.max(0.01, Number((fraudThreshold - 0.01).toFixed(2))).toFixed(2)} (Cap)</span>
               </div>
             </div>
 

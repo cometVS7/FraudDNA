@@ -13,7 +13,7 @@ interface RequestOptions {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
   detail: string;
 
@@ -22,6 +22,37 @@ class ApiError extends Error {
     this.status = status;
     this.detail = detail;
   }
+}
+
+export function formatErrorDetail(detail: unknown): string {
+  if (typeof detail === "string") {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => {
+      if (typeof item === "object" && item !== null) {
+        const entry = item as Record<string, unknown>;
+        let loc = "";
+        if (Array.isArray(entry.loc)) {
+          const relevant = entry.loc.filter((p) => p !== "body");
+          loc = relevant.join(".");
+        }
+        const rawMsg = typeof entry.msg === "string" ? entry.msg : JSON.stringify(entry);
+        const msg = rawMsg.replace(/^Value error,\s*/i, "");
+        return loc ? `${loc}: ${msg}` : msg;
+      }
+      return String(item);
+    });
+    return messages.join("; ");
+  }
+  if (typeof detail === "object" && detail !== null) {
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      return String(detail);
+    }
+  }
+  return String(detail ?? "");
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -54,7 +85,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     let detail = `HTTP ${res.status}`;
     try {
       const errBody = await res.json();
-      detail = errBody.detail || detail;
+      if (errBody.detail !== undefined) {
+        detail = formatErrorDetail(errBody.detail);
+      } else if (errBody.message) {
+        detail = String(errBody.message);
+      } else {
+        detail = formatErrorDetail(errBody);
+      }
     } catch {
       // ignore
     }
@@ -472,5 +509,3 @@ export function searchRAG(query: string, topK?: number): Promise<RAGSearchRespon
     body: { query, top_k: topK || 5 },
   });
 }
-
-export { ApiError };
