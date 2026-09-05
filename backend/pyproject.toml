@@ -33,6 +33,7 @@ dev = [
     "ruff>=0.6.9",
     "mypy>=1.11.2",
     "pandas-stubs>=2.2.3",
+    "types-networkx",
 ]
 
 [tool.setuptools.packages.find]
