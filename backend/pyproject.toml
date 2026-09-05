@@ -24,6 +24,8 @@ dependencies = [
     "lightgbm>=4.5.0",
     "joblib>=1.4.2",
     "networkx>=3.3",
+    "langchain-core>=0.3.0",
+    "langgraph>=0.2.0",
 ]
 
 [project.optional-dependencies]

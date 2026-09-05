@@ -32,5 +32,16 @@ class Settings(BaseSettings):
         "postgresql://frauddna_user:frauddna_password@localhost:5432/frauddna_db"
     )
 
+    # Agent Settings
+    LLM_PROVIDER: str = "deterministic"
+    LLM_MODEL: str = "gpt-4o-mini"
+    LLM_API_KEY: str | None = None
+    LLM_API_BASE: str = "https://api.openai.com/v1"
+    AGENT_MAX_STEPS: int = 8
+    AGENT_TIMEOUT_SECONDS: float = 30.0
+
+    # Policy Engine Settings
+    POLICY_VERSION: str = "2025.1"
+
 
 settings = Settings()
