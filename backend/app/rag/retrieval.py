@@ -41,9 +41,7 @@ class RAGService:
         auto_initialize: bool = False,
     ) -> None:
         self.vector_store = vector_store or get_vector_store()
-        self.embedding_provider = (
-            embedding_provider or get_embedding_provider()
-        )
+        self.embedding_provider = embedding_provider or get_embedding_provider()
         self.pipeline = pipeline or IngestionPipeline()
         self.auto_initialize = auto_initialize
 

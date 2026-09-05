@@ -105,9 +105,7 @@ class InMemoryVectorStore(BaseVectorStore):
 
     def delete_by_document_id(self, document_id: str) -> int:
         """Remove all chunks belonging to a specific document."""
-        to_delete = [
-            cid for cid, r in self._records.items() if r.document_id == document_id
-        ]
+        to_delete = [cid for cid, r in self._records.items() if r.document_id == document_id]
         for cid in to_delete:
             del self._records[cid]
         return len(to_delete)

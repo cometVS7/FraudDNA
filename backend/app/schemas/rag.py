@@ -73,8 +73,12 @@ class SearchResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    source_type: str = Field(..., description="Type of source document (policy, historical_case, guideline).")
-    source_id: str = Field(..., description="Reference ID (e.g. POL-001, CASE-2025-089) or document ID.")
+    source_type: str = Field(
+        ..., description="Type of source document (policy, historical_case, guideline)."
+    )
+    source_id: str = Field(
+        ..., description="Reference ID (e.g. POL-001, CASE-2025-089) or document ID."
+    )
     document_title: str = Field(..., description="Title of the source document.")
     chunk_id: str = Field(..., description="Deterministic chunk identifier.")
     content: str = Field(..., description="Text content of the retrieved chunk.")
@@ -95,7 +99,8 @@ class SearchResponse(BaseModel):
         default_factory=list, description="Ranked list of semantic search results."
     )
     store_status: str = Field(
-        default="active", description="Vector store availability state (active, degraded, unavailable)."
+        default="active",
+        description="Vector store availability state (active, degraded, unavailable).",
     )
 
 
@@ -106,7 +111,9 @@ class DocumentSummary(BaseModel):
 
     document_id: str = Field(..., description="Deterministic unique document ID.")
     title: str = Field(..., description="Document title.")
-    document_type: str = Field(..., description="Type of document (policy, historical_case, guideline).")
+    document_type: str = Field(
+        ..., description="Type of document (policy, historical_case, guideline)."
+    )
     category: str = Field(..., description="Topic category.")
     source_path: str = Field(..., description="Relative file path in knowledge base.")
     chunk_count: int = Field(..., description="Number of vector chunks for this document.")
@@ -118,7 +125,9 @@ class DocumentListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     total_documents: int = Field(..., description="Total documents registered in knowledge base.")
-    documents: list[DocumentSummary] = Field(default_factory=list, description="List of document summaries.")
+    documents: list[DocumentSummary] = Field(
+        default_factory=list, description="List of document summaries."
+    )
 
 
 class DocumentDetailResponse(BaseModel):
@@ -133,7 +142,9 @@ class DocumentDetailResponse(BaseModel):
     source_path: str = Field(..., description="Relative file path.")
     content_hash: str = Field(..., description="SHA-256 content hash.")
     chunk_count: int = Field(..., description="Total chunks for document.")
-    chunks: list[dict[str, Any]] = Field(default_factory=list, description="Chunk content and metadata.")
+    chunks: list[dict[str, Any]] = Field(
+        default_factory=list, description="Chunk content and metadata."
+    )
 
 
 class RAGStatusResponse(BaseModel):

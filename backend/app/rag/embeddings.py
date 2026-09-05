@@ -70,13 +70,13 @@ class DeterministicLocalEmbeddingProvider(BaseEmbeddingProvider):
         for i, token in enumerate(tokens):
             features.append(f"w:{token}")
             if i > 0:
-                features.append(f"bi:{tokens[i-1]}_{token}")
+                features.append(f"bi:{tokens[i - 1]}_{token}")
 
         # 2. Add 3-character subword n-grams for typo & morphological resilience
         for token in tokens:
             if len(token) >= 3:
                 for j in range(len(token) - 2):
-                    features.append(f"ch:{token[j:j+3]}")
+                    features.append(f"ch:{token[j : j + 3]}")
 
         for feat in features:
             h = int(hashlib.md5(feat.encode("utf-8")).hexdigest(), 16)

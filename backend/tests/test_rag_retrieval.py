@@ -108,4 +108,3 @@ def test_no_silent_fallback_in_service_status() -> None:
     assert status.vector_store == "in_memory_fallback"
     assert status.message is not None
     assert "PostgreSQL persistent vector store is unavailable" in status.message
-

@@ -5,6 +5,7 @@ Revises:
 Create Date: 2026-09-05 07:50:00.000000
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -57,7 +58,9 @@ def upgrade() -> None:
 
     # Attempt to add pgvector column (384 dimensions matching default provider)
     try:
-        op.execute("ALTER TABLE rag_document_chunks ADD COLUMN IF NOT EXISTS embedding vector(384);")
+        op.execute(
+            "ALTER TABLE rag_document_chunks ADD COLUMN IF NOT EXISTS embedding vector(384);"
+        )
         # Add vector cosine distance index for production similarity search
         op.execute(
             "CREATE INDEX IF NOT EXISTS ix_rag_document_chunks_embedding_cosine "

@@ -103,9 +103,7 @@ class DocumentParser:
             raise FileNotFoundError(f"File {file_path} not found.")
 
         raw_content = file_path.read_text(encoding="utf-8")
-        rel_path = (
-            str(file_path.relative_to(base_dir)) if base_dir else file_path.name
-        )
+        rel_path = str(file_path.relative_to(base_dir)) if base_dir else file_path.name
 
         doc_id = self.generate_document_id(rel_path)
         title = self.extract_title(raw_content, file_path.name)
@@ -232,9 +230,7 @@ class DocumentChunker:
 
         return [(title, "\n".join(body_lines).strip()) for title, body_lines in sections]
 
-    def _chunk_section(
-        self, doc_title: str, section_title: str, text: str
-    ) -> list[str]:
+    def _chunk_section(self, doc_title: str, section_title: str, text: str) -> list[str]:
         """Chunk a section text with sliding window overlap and title header context."""
         prefix = f"[{doc_title} > {section_title}]\n"
         effective_chunk_size = max(200, self.target_chunk_size - len(prefix))
@@ -276,9 +272,7 @@ class IngestionPipeline:
         self.parser = parser or DocumentParser()
         self.chunker = chunker or DocumentChunker()
 
-    def process_directory(
-        self, root_dir: Path | str
-    ) -> list[ParsedDocument]:
+    def process_directory(self, root_dir: Path | str) -> list[ParsedDocument]:
         """Discover and process all .md/.txt files in knowledge directory."""
         path = Path(root_dir)
         if not path.exists():
