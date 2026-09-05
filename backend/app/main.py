@@ -8,12 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_v1_router
 from app.core.config import settings
+from app.graph.service import get_graph_service
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context for startup and shutdown events."""
-    # Startup logic for future phases (DB connections, model cache, etc.)
+    # Warm up FraudDNA GraphService during startup so request paths never block
+    service = get_graph_service()
+    service.initialize()
     yield
     # Shutdown cleanup logic
 

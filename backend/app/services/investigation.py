@@ -6,11 +6,13 @@ deterministic evidence synthesis.
 """
 
 import hashlib
+import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import joblib  # type: ignore[import-untyped]
+import joblib
 import numpy as np
 import pandas as pd
 
@@ -29,6 +31,8 @@ from app.schemas.investigation import (
     RiskFactor,
     RiskLevel,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionNotFoundError(Exception):
@@ -65,6 +69,17 @@ class InvestigationService:
             if alt_models.exists():
                 self.models_dir = alt_models
 
+        # Ensure repo root containing 'ml' is on sys.path
+        for candidate in [
+            self.models_dir.resolve().parent,
+            self.models_dir.resolve().parent.parent,
+            Path.cwd(),
+            Path.cwd().parent,
+        ]:
+            if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
+                sys.path.insert(0, str(candidate))
+                break
+
         model_path = self.models_dir / "lightgbm_model.joblib"
         pipeline_path = self.models_dir / "feature_pipeline.joblib"
 
@@ -73,9 +88,13 @@ class InvestigationService:
                 self._model = joblib.load(model_path)
                 self._pipeline = joblib.load(pipeline_path)
             except Exception as e:
-                print(f"Warning: Failed to load ML components for investigation: {e}")
+                logger.error(f"Failed to load ML components for investigation: {e}", exc_info=True)
                 self._model = None
                 self._pipeline = None
+        else:
+            logger.warning(f"ML artifacts not found at {self.models_dir}")
+            self._model = None
+            self._pipeline = None
 
         self._models_loaded = True
 

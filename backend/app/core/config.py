@@ -1,9 +1,23 @@
 """FraudDNA Core Settings Configuration."""
 
+import sys
+from pathlib import Path
 from typing import Any
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Ensure repository root is on sys.path so 'ml' module is unpicklable by joblib
+_config_file = Path(__file__).resolve()
+for candidate in [
+    _config_file.parent.parent.parent.parent,
+    _config_file.parent.parent.parent,
+    Path.cwd(),
+    Path.cwd().parent,
+]:
+    if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))
+        break
 
 
 class Settings(BaseSettings):

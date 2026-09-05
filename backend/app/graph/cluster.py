@@ -11,6 +11,7 @@ import networkx as nx
 from app.graph.builder import GraphBuilder
 from app.graph.models import EntityType, parse_node_id
 from app.schemas.cluster import ClusterDetail, ClusterRiskFactor
+from app.schemas.graph import GraphData
 
 
 class ClusterDetector:
@@ -27,13 +28,13 @@ class ClusterDetector:
         # Construct bipartite clustering graph excluding high-degree merchant nodes
         # Bridge entities: customer, device, ip, card
         clustering_subgraph: nx.Graph = nx.Graph()
-        for u, v, attrs in full_graph.edges(data=True):
+        for u, v in full_graph.edges():
             u_type, _ = parse_node_id(str(u))
             v_type, _ = parse_node_id(str(v))
             # Omit merchant edges from cluster connectivity to prevent world collapse
             if u_type == EntityType.MERCHANT.value or v_type == EntityType.MERCHANT.value:
                 continue
-            clustering_subgraph.add_edge(u, v, **attrs)
+            clustering_subgraph.add_edge(u, v)
 
         # Extract connected components
         raw_components = list(nx.connected_components(clustering_subgraph))
@@ -62,7 +63,7 @@ class ClusterDetector:
                 for nbr in full_graph.neighbors(tx_node):
                     full_cluster_nodes.add(nbr)
 
-            cluster_subgraph = full_graph.subgraph(full_cluster_nodes).copy()
+            cluster_subgraph = full_graph.subgraph(full_cluster_nodes)
             cluster_detail = self._build_cluster_detail(cluster_subgraph, tx_nodes)
             detected_clusters.append(cluster_detail)
 
@@ -218,7 +219,15 @@ class ClusterDetector:
             risk_factors,
         )
 
-        graph_data = GraphBuilder.subgraph_to_graph_data(cluster_subgraph)
+        if is_suspicious or len(cluster_subgraph) <= 1000:
+            graph_data = GraphBuilder.subgraph_to_graph_data(cluster_subgraph)
+        else:
+            graph_data = GraphData(
+                nodes=[],
+                edges=[],
+                total_nodes=len(cluster_subgraph),
+                total_edges=cluster_subgraph.number_of_edges(),
+            )
         all_node_ids = sorted(cluster_subgraph.nodes())
 
         return ClusterDetail(

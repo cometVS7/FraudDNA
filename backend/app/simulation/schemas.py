@@ -13,7 +13,7 @@ Financial Model:
 import hashlib
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
 class SimulationConfig(BaseModel):
@@ -51,11 +51,10 @@ class SimulationConfig(BaseModel):
 
     @field_validator("review_threshold")
     @classmethod
-    def review_below_fraud(cls, v: float | None, info: object) -> float | None:
+    def review_below_fraud(cls, v: float | None, info: ValidationInfo) -> float | None:
         """Ensure review_threshold < fraud_threshold when both are set."""
-        if v is not None:
-            data = info.data if hasattr(info, "data") else {}  # type: ignore[union-attr]
-            fraud_th = data.get("fraud_threshold", 0.37)
+        if v is not None and info.data:
+            fraud_th = info.data.get("fraud_threshold", 0.37)
             if v >= fraud_th:
                 msg = "review_threshold must be less than fraud_threshold"
                 raise ValueError(msg)
