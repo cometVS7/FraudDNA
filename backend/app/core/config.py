@@ -77,7 +77,7 @@ class Settings(BaseSettings):
                 origins = [
                     item.strip().rstrip("/") for item in v_trimmed.split(",") if item.strip()
                 ]
-        elif isinstance(v, (list, tuple, set)):
+        elif isinstance(v, list | tuple | set):
             origins = [str(item).strip().rstrip("/") for item in v if str(item).strip()]
 
         default_origins = [

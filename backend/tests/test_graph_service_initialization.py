@@ -77,7 +77,7 @@ def test_api_transactions_returns_real_scores(client: TestClient) -> None:
 
     # Ensure risk scores are valid probabilities and strictly non-zero
     scores = [t["risk_score"] for t in data["transactions"]]
-    assert all(isinstance(s, (int, float)) and 0.0 <= s <= 1.0 for s in scores)
+    assert all(isinstance(s, int | float) and 0.0 <= s <= 1.0 for s in scores)
     assert any(s > 0.0 for s in scores)
 
 
@@ -173,4 +173,3 @@ def test_simulation_engine_strict_zip_mismatch() -> None:
     with patch("joblib.load", side_effect=[fake_model, fake_pipeline]):
         with pytest.raises(RuntimeError, match="Simulation scoring failed"):
             engine._score_all_transactions(dummy_df)
-

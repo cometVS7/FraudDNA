@@ -210,9 +210,9 @@ class InvestigationService:
             for i, feat_name in enumerate(feature_names):
                 impact = float(contribs[i])
                 val = X_single.iloc[0, i] if hasattr(X_single, "iloc") else X_single[0][i]
-                if isinstance(val, (np.floating, float)):
+                if isinstance(val, np.floating | float):
                     val = round(float(val), 4)
-                elif isinstance(val, (np.integer, int)):
+                elif isinstance(val, np.integer | int):
                     val = int(val)
                 scored_features.append((feat_name, val, impact))
 

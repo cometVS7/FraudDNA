@@ -162,7 +162,7 @@ class InMemoryVectorStore(BaseVectorStore):
             actual = metadata.get(key)
             if actual is None:
                 return False
-            if isinstance(expected, (list, set, tuple)):
+            if isinstance(expected, list | set | tuple):
                 if actual not in expected:
                     return False
             elif str(actual).lower() != str(expected).lower():
