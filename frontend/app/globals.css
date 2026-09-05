@@ -4,71 +4,154 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 160 84% 39%;
-    --radius: 0.5rem;
+    --color-obsidian: #08080A;
+    --color-onyx: #040406;
+    --color-carbon: #121317;
+    --color-graphite: #1C1D22;
+    --color-slate: #2E3038;
+    --color-smoke: #464853;
+    --color-ash: #5E616E;
+    --color-steel: #777A88;
+    --color-fog: #9194A1;
+    --color-mist: #ACAEB9;
+    --color-silver: #C7C9D1;
+    --color-bone: #E2E3E9;
+    --color-paper-white: #FFFFFF;
+    --color-copper: #CC9166;
+    --color-gilded: #AE9357;
+
+    --risk-low: #8FAF9B;
+    --risk-review: #C7A66B;
+    --risk-high: #C47A63;
+    --risk-critical: #D05B5B;
+    --risk-info: #A6A9B3;
+
+    --gradient-gilded: linear-gradient(
+      103deg,
+      rgb(174, 147, 87),
+      rgb(255, 240, 204) 40%,
+      rgb(174, 147, 87) 70%,
+      rgba(189, 157, 79, 0)
+    );
+
+    --radius-card: 10px;
+    --radius-full: 9999px;
+    --border-primary: #1C1D22;
+    --border-secondary: #2E3038;
+
+    --sidebar-width: 240px;
+    --page-max-width: 1440px;
   }
 
   * {
-    @apply border-border;
+    border-color: var(--border-primary);
   }
 
+  html,
   body {
-    @apply bg-background text-foreground antialiased;
+    background-color: var(--color-obsidian);
+    color: var(--color-bone);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Smooth transitions */
-@layer utilities {
-  .transition-card {
-    @apply transition-all duration-200 ease-in-out;
-  }
-}
-
-/* Custom scrollbar */
+/* Custom Scrollbar for dark theme */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #08080A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
+  background: #1C1D22;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: #2E3038;
 }
 
-/* React Flow overrides */
-.react-flow__node {
-  cursor: pointer;
+/* Hairline borders and surface transitions */
+.hairline-border {
+  border: 1px solid #1C1D22;
+}
+
+.hairline-border-b {
+  border-bottom: 1px solid #1C1D22;
+}
+
+.hairline-border-r {
+  border-right: 1px solid #1C1D22;
+}
+
+.hairline-border-t {
+  border-top: 1px solid #1C1D22;
+}
+
+/* React Flow Midnight Theme Overrides */
+.react-flow {
+  background-color: #040406 !important;
+}
+
+.react-flow__background {
+  background-color: #040406 !important;
+}
+
+.react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.react-flow__controls {
+  background-color: #121317 !important;
+  border: 1px solid #1C1D22 !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
 }
 
 .react-flow__controls button {
-  border-color: hsl(var(--border)) !important;
+  background-color: #121317 !important;
+  border-bottom: 1px solid #1C1D22 !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  fill: #9194A1 !important;
+  color: #9194A1 !important;
+  transition: background-color 150ms ease, fill 150ms ease;
+}
+
+.react-flow__controls button:hover {
+  background-color: #1C1D22 !important;
+  fill: #FFFFFF !important;
 }
 
 .react-flow__minimap {
-  background-color: hsl(var(--card)) !important;
+  background-color: #040406 !important;
+  border: 1px solid #1C1D22 !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+
+.react-flow__edge-path {
+  stroke: #2E3038 !important;
+  stroke-width: 1.25px !important;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
