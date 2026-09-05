@@ -67,37 +67,26 @@ Do not implement fraud detection yet.
 - REST API endpoints (`POST /api/v1/agent/investigate`, `POST /api/v1/decisions/evaluate`, `GET /api/v1/decisions/{transaction_id}`)
 - comprehensive automated unit and integration tests
 
-## Phase 6 — Risk Simulation
+## Phase 6 — Risk Simulation & Financial Impact [COMPLETED]
+- configurable risk and review thresholds (`fraud_threshold`, `review_threshold`)
+- realistic financial parameters (`cost_per_false_positive`, `avg_fraud_loss`, `review_capacity`)
+- empirical replay dataset with deterministic evaluations
+- comprehensive classification metrics: TP, FP, TN, FN, precision, recall, F1, FPR, detection rate
+- exact financial modeling: `fraud_prevented_amount`, `fraud_missed_amount`, `false_positive_cost`, `expected_loss`, `net_benefit`
+- multi-threshold comparison engine with deterministic `comparison_id`
+- operational review capacity overflow detection
+- REST API endpoints (`POST /api/v1/simulations/run`, `POST /api/v1/simulations/compare`, `GET /api/v1/dashboard/summary`)
+- automated unit & integration test coverage (105/105 backend tests passing)
 
-- configurable thresholds
-- replay dataset
-- fraud caught
-- false positives
-- FP cost
-- expected loss
-- net benefit
-- precision/recall trade-off
-
-## Phase 8 — Dashboard
-Build:
-- Overview
-- Transactions
-- FraudDNA
-- Investigations
-- Simulation
-- Evaluation
-- Audit
-
-Key views:
-- analytics overview
-- transaction detail
-- interactive FraudDNA graph
-- investigation timeline
-- XAI
-- RAG evidence
-- deterministic decision
-- simulation
-- evaluation
+## Phase 8 — Complete Fraud Intelligence Dashboard [COMPLETED]
+Fully integrated Next.js application backed by actual live backend endpoints:
+- **Overview (`/`)**: High-level KPIs, decision distributions (ALLOW / REVIEW / HOLD), recent transactions, quick actions
+- **Transactions (`/transactions`)**: Searchable, filterable transaction ledger with real amounts, risk scores, and level badges
+- **FraudDNA Graph (`/frauddna`)**: Interactive React Flow graph visualization of entity rings, shared devices/cards/IPs, and syndicate clusters
+- **Investigation (`/investigate`)**: End-to-end multi-layer pipeline inspection: ML risk score, Tree SHAP top factors, graph ring context, RAG policy evidence, AI agent audit trail, and deterministic decision card
+- **Simulation (`/simulation`)**: Interactive threshold sliders, dynamic financial impact projections, precision/recall curves, and threshold comparison grid
+- **Evaluation (`/evaluation`)**: Held-out test performance (AUC-ROC, AP, F1), confusion matrix, scenario catch rates, and transparent synthetic data disclosures
+- **Audit Trail (`/audit`)**: Verifiable investigation timeline, evidence verification, and deterministic decision hash inspection
 
 ## Phase 9 — Failure Recovery
 Demonstrate:
