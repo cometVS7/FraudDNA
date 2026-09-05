@@ -7,17 +7,23 @@ from typing import Any
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Ensure repository root is on sys.path so 'ml' module is unpicklable by joblib
-_config_file = Path(__file__).resolve()
-for candidate in [
-    _config_file.parent.parent.parent.parent,
-    _config_file.parent.parent.parent,
-    Path.cwd(),
-    Path.cwd().parent,
-]:
-    if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
-        sys.path.insert(0, str(candidate))
-        break
+
+def ensure_ml_on_sys_path() -> None:
+    """Ensure repository root containing the 'ml' module is on sys.path for joblib unpickling."""
+    config_file = Path(__file__).resolve()
+    for candidate in [
+        config_file.parent.parent.parent.parent,
+        config_file.parent.parent.parent,
+        Path.cwd(),
+        Path.cwd().parent,
+    ]:
+        if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
+            sys.path.insert(0, str(candidate))
+            break
+
+
+# Ensure sys.path is configured immediately on import
+ensure_ml_on_sys_path()
 
 
 class Settings(BaseSettings):

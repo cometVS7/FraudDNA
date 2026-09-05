@@ -32,7 +32,7 @@ jobs:
 
       - name: Mypy Type Check
         run: |
-          mypy backend/app
+          mypy --config-file backend/pyproject.toml backend/app
 
       - name: Run Backend Tests
         run: |

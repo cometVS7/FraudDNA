@@ -15,7 +15,6 @@ No new model is trained. The existing Phase 1 LightGBM risk scores are used.
 """
 
 import logging
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +22,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from app.core.config import ensure_ml_on_sys_path
 from app.simulation.schemas import (
     SimulationConfig,
     SimulationResult,
@@ -88,15 +88,7 @@ class SimulationEngine:
                 self.models_dir = alt_models
 
         # Ensure repo root containing 'ml' is on sys.path
-        for candidate in [
-            self.models_dir.resolve().parent,
-            self.models_dir.resolve().parent.parent,
-            Path.cwd(),
-            Path.cwd().parent,
-        ]:
-            if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
-                sys.path.insert(0, str(candidate))
-                break
+        ensure_ml_on_sys_path()
 
         model_file = self.models_dir / "lightgbm_model.joblib"
         pipeline_file = self.models_dir / "feature_pipeline.joblib"
@@ -110,7 +102,7 @@ class SimulationEngine:
                 probs = np.asarray(raw_probs)[:, 1]
                 scores = {
                     str(tx_id): round(float(p), 4)
-                    for tx_id, p in zip(df["transaction_id"], probs, strict=False)
+                    for tx_id, p in zip(df["transaction_id"], probs, strict=True)
                 }
                 del X
                 del raw_probs

@@ -1,6 +1,5 @@
 import gc
 import logging
-import sys
 import threading
 import time
 from pathlib import Path
@@ -11,6 +10,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from app.core.config import ensure_ml_on_sys_path
 from app.graph.builder import GraphBuilder
 from app.graph.cluster import ClusterDetector
 from app.graph.models import EntityType, make_node_id
@@ -37,7 +37,6 @@ class GraphService:
         self.clusters: list[ClusterDetail] = []
         self.clusters_by_id: dict[str, ClusterDetail] = {}
         self.tx_to_cluster: dict[str, str] = {}
-        self.df: pd.DataFrame | None = None
         self.transactions_by_id: dict[str, dict[str, Any]] = {}
         self.overview_metrics: dict[str, Any] = {}
         self.all_transactions: list[dict[str, Any]] = []
@@ -53,61 +52,67 @@ class GraphService:
             if self.is_initialized and not force_reload:
                 return
 
-            if not self.data_path.exists():
-                alt_data = Path("..") / self.data_path
+            data_path = self.data_path
+            if not data_path.exists():
+                alt_data = Path("..") / data_path
                 if alt_data.exists():
-                    self.data_path = alt_data
+                    data_path = alt_data
 
-            if not self.models_dir.exists():
-                alt_models = Path("..") / self.models_dir
+            models_dir = self.models_dir
+            if not models_dir.exists():
+                alt_models = Path("..") / models_dir
                 if alt_models.exists():
-                    self.models_dir = alt_models
+                    models_dir = alt_models
 
-            if not self.data_path.exists():
-                raise FileNotFoundError(f"Transactions dataset not found at {self.data_path}")
+            if not data_path.exists():
+                raise FileNotFoundError(f"Transactions dataset not found at {data_path}")
 
-            # Ensure repo root containing 'ml' is on sys.path
-            for candidate in [
-                self.models_dir.resolve().parent,
-                self.models_dir.resolve().parent.parent,
-                Path.cwd(),
-                Path.cwd().parent,
-            ]:
-                if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
-                    sys.path.insert(0, str(candidate))
-                    break
+            # Ensure repository root is on sys.path for joblib unpickling
+            ensure_ml_on_sys_path()
 
             logger.info("FraudDNA graph initialization started")
             print("FraudDNA graph initialization started", flush=True)
             t0 = time.perf_counter()
 
-            df = pd.read_csv(self.data_path)
-            self.df = df
-            self.transactions_by_id = {
-                str(row["transaction_id"]): {str(k): v for k, v in row.items()}
-                for _, row in df.iterrows()
-            }
+            # Load dataset
+            df = pd.read_csv(data_path)
 
-            # Compute transaction risk scores using Phase 1 model
-            risk_scores = self._score_transactions(df)
+            # Compute transaction risk scores using Phase 1 LightGBM model
+            risk_scores = self._score_transactions(df, models_dir=models_dir)
 
             # Build in-memory NetworkX relationship graph
-            self.graph = self.builder.build_from_dataframe(df, risk_scores=risk_scores)
+            graph = self.builder.build_from_dataframe(df, risk_scores=risk_scores)
 
             # Detect and score clusters
-            self.clusters = self.detector.detect_clusters(self.graph)
-            self.clusters_by_id = {c.cluster_id: c for c in self.clusters}
+            clusters = self.detector.detect_clusters(graph)
+            clusters_by_id = {c.cluster_id: c for c in clusters}
 
             # Build transaction to cluster lookup
-            self.tx_to_cluster.clear()
-            for cluster in self.clusters:
+            tx_to_cluster: dict[str, str] = {}
+            for cluster in clusters:
                 for tx_id in cluster.member_transaction_ids:
-                    self.tx_to_cluster[tx_id] = cluster.cluster_id
+                    tx_to_cluster[tx_id] = cluster.cluster_id
 
-            # Pre-compute overview metrics and transaction list for sub-millisecond API responses
-            self._precompute_views(df)
+            # Precompute overview metrics and shared transaction memory
+            all_transactions, transactions_by_id, overview_metrics = self._precompute_views(
+                df, graph, tx_to_cluster, clusters
+            )
 
+            # Commit all validated state atomically
+            self.data_path = data_path
+            self.models_dir = models_dir
+            self.graph = graph
+            self.clusters = clusters
+            self.clusters_by_id = clusters_by_id
+            self.tx_to_cluster = tx_to_cluster
+            self.all_transactions = all_transactions
+            self.transactions_by_id = transactions_by_id
+            self.overview_metrics = overview_metrics
             self.is_initialized = True
+
+            del df
+            gc.collect()
+
             elapsed = time.perf_counter() - t0
 
             logger.info(
@@ -121,10 +126,18 @@ class GraphService:
             print(f"edges={self.graph.number_of_edges()}", flush=True)
             print(f"clusters={len(self.clusters)}", flush=True)
 
-    def _score_transactions(self, df: pd.DataFrame) -> dict[str, float]:
+    def _score_transactions(
+        self, df: pd.DataFrame, models_dir: Path | None = None
+    ) -> dict[str, float]:
         """Score transactions with Phase 1 LightGBM model."""
-        model_file = self.models_dir / "lightgbm_model.joblib"
-        pipeline_file = self.models_dir / "feature_pipeline.joblib"
+        target_models_dir = models_dir or self.models_dir
+        if not target_models_dir.exists():
+            alt_models = Path("..") / target_models_dir
+            if alt_models.exists():
+                target_models_dir = alt_models
+
+        model_file = target_models_dir / "lightgbm_model.joblib"
+        pipeline_file = target_models_dir / "feature_pipeline.joblib"
 
         if not model_file.exists():
             raise FileNotFoundError(f"ML model artifact not found at {model_file}")
@@ -139,7 +152,7 @@ class GraphService:
             probs = np.asarray(raw_probs)[:, 1]
             scores = {
                 str(tx_id): round(float(p), 4)
-                for tx_id, p in zip(df["transaction_id"], probs, strict=False)
+                for tx_id, p in zip(df["transaction_id"], probs, strict=True)
             }
             del X
             del raw_probs
@@ -150,8 +163,14 @@ class GraphService:
             logger.error(f"Failed to score transactions with ML model: {e}", exc_info=True)
             raise RuntimeError(f"ML model scoring failed: {e}") from e
 
-    def _precompute_views(self, df: pd.DataFrame) -> None:
-        """Precompute dashboard metrics and structured transaction objects."""
+    def _precompute_views(
+        self,
+        df: pd.DataFrame,
+        graph: nx.Graph,
+        tx_to_cluster: dict[str, str],
+        clusters: list[ClusterDetail],
+    ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], dict[str, Any]]:
+        """Precompute dashboard metrics and structured unified transaction objects."""
         total_txns = len(df)
         fraud_count = int(df["is_fraud"].sum()) if "is_fraud" in df.columns else 0
         legit_count = total_txns - fraud_count
@@ -167,14 +186,14 @@ class GraphService:
         high_risk_count = 0
         critical_count = 0
 
-        self.all_transactions = []
-        for tx_id, row in self.transactions_by_id.items():
+        all_transactions: list[dict[str, Any]] = []
+        transactions_by_id: dict[str, dict[str, Any]] = {}
+
+        records = df.to_dict(orient="records")
+        for row in records:
+            tx_id = str(row.get("transaction_id", ""))
             tx_node = f"transaction:{tx_id}"
-            score = (
-                float(self.graph.nodes[tx_node].get("risk_score", 0.0))
-                if tx_node in self.graph
-                else 0.0
-            )
+            score = float(graph.nodes[tx_node].get("risk_score", 0.0)) if tx_node in graph else 0.0
 
             if score < 0.30:
                 level = "low"
@@ -196,30 +215,33 @@ class GraphService:
             if score >= 0.90:
                 critical_count += 1
 
-            cluster_id = self.tx_to_cluster.get(tx_id)
+            cluster_id = tx_to_cluster.get(tx_id)
             is_fraud = bool(row.get("is_fraud", 0))
 
-            self.all_transactions.append(
-                {
-                    "transaction_id": tx_id,
-                    "amount": float(row.get("amount", 0)),
-                    "timestamp": str(row.get("timestamp", "")),
-                    "customer_id": str(row.get("customer_id", "")),
-                    "merchant_id": str(row.get("merchant_id", "")),
-                    "device_id": str(row.get("device_id", "")),
-                    "ip_address": str(row.get("ip_address", "")),
-                    "card_id": str(row.get("card_id", "")),
-                    "risk_score": round(score, 4),
-                    "risk_level": level,
-                    "is_fraud": is_fraud,
-                    "cluster_id": cluster_id,
-                }
-            )
+            # Unified record preserving raw attributes and enriched scoring metadata
+            tx_obj = {
+                **{str(k): v for k, v in row.items()},
+                "transaction_id": tx_id,
+                "amount": float(row.get("amount", 0)),
+                "timestamp": str(row.get("timestamp", "")),
+                "customer_id": str(row.get("customer_id", "")),
+                "merchant_id": str(row.get("merchant_id", "")),
+                "device_id": str(row.get("device_id", "")),
+                "ip_address": str(row.get("ip_address", "")),
+                "card_id": str(row.get("card_id", "")),
+                "risk_score": round(score, 4),
+                "risk_level": level,
+                "is_fraud": is_fraud,
+                "cluster_id": cluster_id,
+            }
 
-        total_clusters = len(self.clusters)
-        suspicious_clusters = sum(1 for c in self.clusters if c.is_suspicious)
+            all_transactions.append(tx_obj)
+            transactions_by_id[tx_id] = tx_obj
 
-        self.overview_metrics = {
+        total_clusters = len(clusters)
+        suspicious_clusters = sum(1 for c in clusters if c.is_suspicious)
+
+        overview_metrics = {
             "total_transactions": total_txns,
             "fraud_count": fraud_count,
             "legitimate_count": legit_count,
@@ -234,6 +256,8 @@ class GraphService:
             "risk_distribution": distribution,
             "data_label": "synthetic_dataset",
         }
+
+        return all_transactions, transactions_by_id, overview_metrics
 
     def get_clusters(
         self,
@@ -347,7 +371,6 @@ class GraphService:
         """Ensure in-memory graph is built."""
         if not self.is_initialized:
             self.initialize()
-
 
     def get_overview_metrics(self) -> dict[str, Any]:
         """Return precomputed dashboard overview metrics."""

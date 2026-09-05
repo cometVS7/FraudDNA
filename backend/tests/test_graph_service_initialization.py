@@ -69,15 +69,16 @@ def test_api_overview_returns_real_metrics(client: TestClient) -> None:
 
 def test_api_transactions_returns_real_scores(client: TestClient) -> None:
     """Verify GET /api/v1/transactions returns paginated list with real ML risk scores."""
-    resp = client.get("/api/v1/transactions?limit=10&offset=0")
+    resp = client.get("/api/v1/transactions?limit=25&offset=0")
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] == 25000
-    assert len(data["transactions"]) == 10
+    assert len(data["transactions"]) == 25
 
-    # Ensure risk scores are not all 0.0
+    # Ensure risk scores are valid probabilities and strictly non-zero
     scores = [t["risk_score"] for t in data["transactions"]]
-    assert any(s >= 0.0 for s in scores)
+    assert all(isinstance(s, (int, float)) and 0.0 <= s <= 1.0 for s in scores)
+    assert any(s > 0.0 for s in scores)
 
 
 def test_known_coordinated_transaction_scored_high(client: TestClient) -> None:
@@ -103,3 +104,73 @@ def test_graph_endpoints_functional(client: TestClient) -> None:
     assert clusters_resp.status_code == 200
     cdata = clusters_resp.json()
     assert cdata["total_clusters"] >= 2
+
+
+def test_forced_reload_failure_preserves_healthy_state() -> None:
+    """Verify forced reload failure does not corrupt or wipe an already healthy GraphService state."""
+    svc = get_graph_service()
+    svc.initialize()
+    assert svc.is_initialized is True
+
+    orig_graph = svc.graph
+    orig_tx_count = len(svc.all_transactions)
+    orig_metrics = dict(svc.overview_metrics)
+
+    # Temporarily point data_path to an invalid path and force reload
+    orig_data_path = svc.data_path
+    svc.data_path = Path("/nonexistent/path/transactions.csv")
+
+    try:
+        with pytest.raises(FileNotFoundError):
+            svc.initialize(force_reload=True)
+
+        # Verify original healthy service was unaffected and stayed initialized
+        assert svc.is_initialized is True
+        assert svc.graph is orig_graph
+        assert len(svc.all_transactions) == orig_tx_count
+        assert svc.overview_metrics == orig_metrics
+    finally:
+        svc.data_path = orig_data_path
+
+
+def test_investigation_service_ml_loading_failure(tmp_path: Path) -> None:
+    """Verify InvestigationService raises FileNotFoundError when ML artifacts are missing."""
+    from app.services.investigation import InvestigationService
+
+    empty_dir = tmp_path / "empty_models"
+    empty_dir.mkdir()
+    inv_svc = InvestigationService(models_dir=empty_dir)
+
+    with pytest.raises(FileNotFoundError, match="ML model artifact not found"):
+        inv_svc.investigate("tx_0001991")
+
+
+def test_simulation_engine_strict_zip_mismatch() -> None:
+    """Verify SimulationEngine fails loudly if prediction length does not match transaction count."""
+    from unittest.mock import MagicMock, patch
+
+    import numpy as np
+    import pandas as pd
+
+    from app.simulation.engine import SimulationEngine
+
+    engine = SimulationEngine()
+    dummy_df = pd.DataFrame(
+        {
+            "transaction_id": ["tx_1", "tx_2", "tx_3"],
+            "amount": [10.0, 20.0, 30.0],
+            "is_fraud": [0, 1, 0],
+        }
+    )
+
+    fake_pipeline = MagicMock()
+    fake_pipeline.transform.return_value = (dummy_df, None)
+
+    fake_model = MagicMock()
+    # Return 2 predictions instead of 3 to trigger strict=True mismatch
+    fake_model.predict_proba.return_value = np.array([[0.9, 0.1], [0.2, 0.8]])
+
+    with patch("joblib.load", side_effect=[fake_model, fake_pipeline]):
+        with pytest.raises(RuntimeError, match="Simulation scoring failed"):
+            engine._score_all_transactions(dummy_df)
+
