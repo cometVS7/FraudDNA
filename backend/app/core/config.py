@@ -1,5 +1,8 @@
 """FraudDNA Core Settings Configuration."""
 
+from typing import Any
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,10 +23,53 @@ class Settings(BaseSettings):
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 8000
 
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: list[str] | str = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://fraud-dna.vercel.app",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> list[str]:
+        """Parse and normalize CORS origins from various formats (JSON, comma-separated, list)."""
+        origins: list[str] = []
+        if isinstance(v, str):
+            v_trimmed = v.strip()
+            if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
+                try:
+                    import json
+
+                    parsed = json.loads(v_trimmed)
+                    if isinstance(parsed, list):
+                        origins = [
+                            str(item).strip().rstrip("/") for item in parsed if str(item).strip()
+                        ]
+                    else:
+                        origins = [str(parsed).strip().rstrip("/")]
+                except Exception:
+                    origins = [
+                        item.strip().rstrip("/")
+                        for item in v_trimmed.strip("[]").split(",")
+                        if item.strip()
+                    ]
+            else:
+                origins = [
+                    item.strip().rstrip("/") for item in v_trimmed.split(",") if item.strip()
+                ]
+        elif isinstance(v, (list, tuple, set)):
+            origins = [str(item).strip().rstrip("/") for item in v if str(item).strip()]
+
+        default_origins = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://fraud-dna.vercel.app",
+        ]
+        for default in default_origins:
+            if default not in origins:
+                origins.append(default)
+
+        return origins
 
     DATABASE_URL: str = (
         "postgresql+asyncpg://frauddna_user:frauddna_password@localhost:5432/frauddna_db"
