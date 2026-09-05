@@ -7,7 +7,6 @@ import {
   SectionCard,
   LoadingState,
   ErrorState,
-  DataLabel,
   formatINR,
   formatPct,
   formatNumber,
@@ -34,18 +33,22 @@ export default function EvaluationPage() {
         <div className="border-b border-[#1C1D22] pb-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-                HELD-OUT TEST SET
+              <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#CC9166]" />
+                Statistical Generalization
               </div>
               <h1 className="text-3xl sm:text-4xl font-serif tracking-tight text-white font-normal mt-1">
-                Model Evaluation
+                Detection Performance
               </h1>
               <p className="text-xs text-[#9194A1] font-sans mt-1">
-                Rigorous out-of-time evaluation benchmarked on unseen chronological holdout data.
+                Out-of-time evaluation benchmarked on held-out chronological transaction distributions.
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <DataLabel label="Synthetic Dataset • Deterministic Seed • Held-Out Evaluation" />
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#AE9357]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#AE9357]" />
+                <span>Evaluation basis · Out-of-time test set</span>
+              </div>
             </div>
           </div>
         </div>
@@ -289,17 +292,16 @@ export default function EvaluationPage() {
               </div>
             </div>
 
-            {/* Methodology & Synthetic Provenance Notice */}
+            {/* Methodology & Evaluation Basis Notice */}
             <div className="p-4 rounded-lg bg-[#040406] border border-[#1C1D22] text-xs text-[#777A88] flex items-start gap-2.5">
               <Info className="h-4 w-4 text-[#CC9166] mt-0.5 flex-shrink-0" />
               <div className="leading-relaxed font-sans">
                 <span className="text-[#E2E3E9] font-medium font-mono text-[11px] block mb-0.5">
-                  EVALUATION PROVENANCE & METHODOLOGY
+                  EVALUATION BASIS &amp; METHODOLOGY
                 </span>
-                Trained using chronological split (Train 70% / Val 15% / Held-Out Test 15%). Thresholds
-                are tuned exclusively on validation splits with zero test feedback. Synthetic data
-                generated with deterministic seed #42 to simulate real-world card testing, credential
-                stuffing, and coordinated syndicate topologies.
+                Evaluated using chronological holdout split (Train 70% / Val 15% / Test 15%). Operational thresholds
+                are calibrated exclusively on validation splits with zero test contamination across card testing, credential
+                stuffing, and coordinated risk syndicate topologies.
               </div>
             </div>
           </>

@@ -22,9 +22,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "FraudDNA — AI Fraud Defense & Risk Intelligence",
+  title: "FraudDNA — Risk Intelligence & Fraud Operations Platform",
   description:
-    "Detect hidden connections and coordinated fraud operations across payments, entities, and devices.",
+    "Institutional financial risk, forensic graph discovery, and deterministic policy controls.",
 };
 
 export default function RootLayout({

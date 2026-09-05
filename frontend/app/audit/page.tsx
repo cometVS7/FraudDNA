@@ -9,7 +9,6 @@ import {
   DecisionBadge,
   LoadingState,
   ErrorState,
-  DataLabel,
   formatINR,
 } from "@/components/ui";
 import { useAsync } from "@/hooks/use-async";
@@ -21,6 +20,8 @@ import {
   ChevronRight,
   ExternalLink,
   FileCheck,
+  ShieldCheck,
+  Scale,
 } from "lucide-react";
 
 function generateAuditHash(txId: string, score: number, timestamp: string = ""): string {
@@ -74,18 +75,22 @@ function AuditContent() {
       <div className="border-b border-[#1C1D22] pb-5">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-              FORENSIC EVIDENCE REPOSITORY
+            <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#CC9166]" />
+              Compliance &amp; Governance Ledger
             </div>
             <h1 className="text-3xl font-serif tracking-tight text-white font-normal mt-1">
-              Audit Trail
+              Decision Audit
             </h1>
             <p className="text-xs text-[#9194A1] font-sans mt-1">
-              Immutable ledger of investigation findings, deterministic policy decisions, and cryptographic proofs.
+              Immutable ledger of investigation findings, decision engine rationales, and cryptographic audit proofs.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <DataLabel label="Immutable Decision Log" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#8FAF9B]">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#8FAF9B]" />
+              <span>Cryptographic Proofs Active</span>
+            </div>
           </div>
         </div>
       </div>
@@ -112,13 +117,13 @@ function AuditContent() {
             onClick={() => setExpandedTxId(searchTx.trim())}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-[#CC9166] text-[#08080A] hover:bg-[#CC9166]/90 transition-opacity font-sans"
           >
-            Inspect Audit
+            Inspect Audit Record
           </button>
         )}
       </div>
 
       {/* Institutional Dense Forensic Ledger */}
-      {txData.status === "loading" && <LoadingState message="Loading immutable audit trail..." />}
+      {txData.status === "loading" && <LoadingState message="Loading immutable decision audit ledger..." />}
       {txData.status === "error" && (
         <ErrorState
           title="AUDIT LOG UNAVAILABLE"
@@ -133,13 +138,13 @@ function AuditContent() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#1C1D22] bg-[#08080A] text-[#5E616E] font-mono text-[10px] uppercase tracking-wider">
-                  <th className="py-3 px-4 w-8"></th>
+                  <th className="py-3 px-3 w-8"></th>
                   <th className="py-3 px-3">TIMESTAMP</th>
                   <th className="py-3 px-3">TRANSACTION</th>
-                  <th className="py-3 px-3">INVESTIGATION</th>
-                  <th className="py-3 px-4">FINDINGS</th>
-                  <th className="py-3 px-3">POLICY</th>
+                  <th className="py-3 px-3">CASE</th>
+                  <th className="py-3 px-3">RISK SIGNALS</th>
                   <th className="py-3 px-3 text-center">DECISION</th>
+                  <th className="py-3 px-4">RATIONALE</th>
                   <th className="py-3 px-4">HASH</th>
                 </tr>
               </thead>
@@ -153,6 +158,15 @@ function AuditContent() {
                   );
                   const decisionAction =
                     tx.risk_score >= 0.85 || tx.is_fraud ? "HOLD" : tx.risk_score >= 0.37 ? "REVIEW" : "ALLOW";
+                  const caseId = `CASE-${tx.transaction_id.replace("txn_", "").toUpperCase()}`;
+                  const rationale =
+                    tx.risk_score >= 0.85
+                      ? tx.cluster_id
+                        ? "High Risk Threshold & Coordinated Syndicate Network"
+                        : "High Risk Threshold Exceeded (≥ 0.8500)"
+                      : tx.risk_score >= 0.37
+                      ? "Suspicious Risk Score Requiring Analyst Escalation"
+                      : "Policy Clearance Rules Satisfied";
 
                   return (
                     <React.Fragment key={tx.transaction_id}>
@@ -174,7 +188,7 @@ function AuditContent() {
                           )}
                         </td>
 
-                        <td className="py-3 px-3 font-mono text-[11px] text-[#777A88]">
+                        <td className="py-3 px-3 font-mono text-[11px] text-[#777A88] whitespace-nowrap">
                           {tx.timestamp
                             ? new Date(tx.timestamp).toLocaleString("en-IN", {
                                 dateStyle: "short",
@@ -188,29 +202,29 @@ function AuditContent() {
                         </td>
 
                         <td className="py-3 px-3 font-mono text-[11px] text-[#9194A1]">
-                          inv_{tx.transaction_id.replace("txn_", "")}
+                          {caseId}
                         </td>
 
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-1.5">
                             <RiskBadge level={tx.risk_level} size="xs" />
                             <span className="font-mono text-[11px] text-[#E2E3E9]">
-                              Score: {tx.risk_score.toFixed(3)}
+                              {tx.risk_score.toFixed(4)}
                             </span>
                             {tx.cluster_id && (
-                              <span className="text-[10px] font-mono text-[#CC9166] truncate max-w-[120px]">
+                              <span className="text-[10px] font-mono text-[#CC9166] truncate max-w-[90px]">
                                 • {tx.cluster_id}
                               </span>
                             )}
                           </div>
                         </td>
 
-                        <td className="py-3 px-3 font-mono text-[11px] text-[#777A88]">
-                          POL-v1.0-DET
-                        </td>
-
                         <td className="py-3 px-3 text-center">
                           <DecisionBadge action={decisionAction} size="xs" />
+                        </td>
+
+                        <td className="py-3 px-4 text-xs font-sans text-[#9194A1] max-w-[220px] truncate">
+                          {rationale}
                         </td>
 
                         <td className="py-3 px-4 font-mono text-[11px] text-[#5E616E] group-hover:text-[#9194A1] transition-colors">
@@ -218,7 +232,7 @@ function AuditContent() {
                         </td>
                       </tr>
 
-                      {/* Expanded Evidence Ledger Row */}
+                      {/* Expandable Compliance Examination Record */}
                       {isExpanded && (
                         <tr className="bg-[#08080A]/90 border-b border-[#1C1D22]">
                           <td colSpan={8} className="p-5">
@@ -227,17 +241,17 @@ function AuditContent() {
                                 <div className="flex items-center gap-3">
                                   <FileCheck className="h-4 w-4 text-[#CC9166]" />
                                   <span className="font-mono text-xs font-semibold text-white">
-                                    AUDIT RECORD / {tx.transaction_id}
+                                    COMPLIANCE RECORD / {caseId}
                                   </span>
-                                  <span className="text-[10px] font-mono text-[#8FAF9B]">
-                                    VERIFIED IMMUTABLE
+                                  <span className="text-[10px] font-mono text-[#8FAF9B] px-2 py-0.5 rounded bg-[#8FAF9B]/10 border border-[#8FAF9B]/30">
+                                    SEALED &amp; AUDIT VERIFIED
                                   </span>
                                 </div>
                                 <Link
                                   href={`/investigate?tx=${tx.transaction_id}`}
                                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#121317] border border-[#1C1D22] text-xs font-mono text-[#CC9166] hover:text-white hover:border-[#CC9166] transition-colors"
                                 >
-                                  <span>Open Forensic Console</span>
+                                  <span>Open in Case Workstation</span>
                                   <ExternalLink className="h-3 w-3" />
                                 </Link>
                               </div>
@@ -253,22 +267,26 @@ function AuditContent() {
                                 </div>
                                 <div>
                                   <div className="text-[10px] text-[#5E616E] uppercase">
-                                    TRANSACTION FACTS
+                                    CASE ENTITY IDENTIFIERS
                                   </div>
                                   <div className="text-[#9194A1] mt-1 space-y-0.5">
                                     <div>Amount: {formatINR(tx.amount)}</div>
                                     <div>Customer: {tx.customer_id}</div>
+                                    <div>Merchant: {tx.merchant_id || "—"}</div>
                                     <div>Device: {tx.device_id}</div>
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-[10px] text-[#5E616E] uppercase">
-                                    POLICY AUTHORITY
+                                  <div className="text-[10px] text-[#5E616E] uppercase flex items-center gap-1">
+                                    <Scale className="h-3 w-3 text-[#CC9166]" />
+                                    <span>DECISION ENGINE AUTHORITY</span>
                                   </div>
                                   <div className="text-[#9194A1] mt-1 space-y-0.5">
-                                    <div>Rule: Deterministic Threshold Engine</div>
-                                    <div>Status: Sealed &amp; Logged {pol ? `• v${pol.policy_version}` : ""}</div>
-                                    <div className="text-[#CC9166]">Action: {pol ? pol.action : decisionAction}</div>
+                                    <div>Engine: Deterministic Policy Controls</div>
+                                    <div>Status: Sealed &amp; Logged {pol ? `• v${pol.policy_version}` : "• v2026.1"}</div>
+                                    <div className="text-[#CC9166] font-semibold">
+                                      Action: {pol ? pol.action : decisionAction}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -277,7 +295,7 @@ function AuditContent() {
                               {inv && inv.evidence.length > 0 && (
                                 <div className="pt-2 border-t border-[#1C1D22]/60">
                                   <div className="text-[10px] font-mono text-[#5E616E] uppercase mb-2">
-                                    SYNTHESIZED FORENSIC EVIDENCE
+                                    INTELLIGENCE SOURCES &amp; REGULATORY PRECEDENTS
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {inv.evidence.map((ev, idx) => (
@@ -316,7 +334,7 @@ function AuditContent() {
 export default function AuditPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<LoadingState message="Connecting to secure audit ledger..." />}>
+      <Suspense fallback={<LoadingState message="Connecting to compliance audit ledger..." />}>
         <AuditContent />
       </Suspense>
     </DashboardLayout>

@@ -302,7 +302,7 @@ export function ShapBars({
   if (!factors || factors.length === 0) {
     return (
       <p className="text-xs text-[#777A88] font-sans italic py-2">
-        No local SHAP factors identified.
+        No local risk attribution factors recorded.
       </p>
     );
   }
@@ -310,7 +310,7 @@ export function ShapBars({
   const maxImpact = Math.max(...factors.map((f) => Math.abs(f.impact)), 0.001);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {factors.slice(0, 6).map((factor, idx) => {
         const isRisk =
           factor.direction === "increases_risk" ||
@@ -321,24 +321,31 @@ export function ShapBars({
         return (
           <div key={idx} className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-mono text-[#E2E3E9] truncate max-w-[200px]">
+              <span className="font-mono text-[#E2E3E9] truncate max-w-[180px]">
                 {factor.feature}
               </span>
-              <span
-                className={`font-mono text-[10px] ${
-                  isRisk ? "text-[#C47A63]" : "text-[#8FAF9B]"
-                }`}
-              >
-                {isRisk ? "+" : "-"}
-                {Math.abs(factor.impact).toFixed(3)}
-              </span>
+              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                <span className={isRisk ? "text-[#C47A63]" : "text-[#8FAF9B]"}>
+                  {isRisk ? "Elevates Risk" : "Mitigates"}
+                </span>
+                <span
+                  className={`px-1.5 py-0.2 rounded font-semibold ${
+                    isRisk
+                      ? "bg-[#C47A63]/10 text-[#C47A63] border border-[#C47A63]/30"
+                      : "bg-[#8FAF9B]/10 text-[#8FAF9B] border border-[#8FAF9B]/30"
+                  }`}
+                >
+                  {isRisk ? "+" : "-"}
+                  {Math.abs(factor.impact).toFixed(3)}
+                </span>
+              </div>
             </div>
             <div className="h-1.5 w-full bg-[#121317] rounded-full overflow-hidden flex border border-[#1C1D22]">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   isRisk ? "bg-[#C47A63]" : "bg-[#8FAF9B]"
                 }`}
-                style={{ width: `${Math.max(6, widthPct)}%` }}
+                style={{ width: `${Math.max(8, widthPct)}%` }}
               />
             </div>
           </div>
@@ -496,28 +503,28 @@ export function EvidenceCard({
   docType?: string;
   documentType?: string;
 }) {
-  const displayDocType = documentType || docType || "POLICY GUIDELINE";
+  const displayDocType = documentType || docType || "POLICY DIRECTIVE";
 
   return (
-    <div className="bg-[#121317] border border-[#1C1D22] hover:border-[#2E3038] rounded-[10px] p-4 transition-colors">
+    <div className="bg-[#121317] border border-[#1C1D22] hover:border-[#2E3038] rounded-[8px] p-3.5 transition-colors">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="font-mono text-xs font-semibold text-[#CC9166] tracking-wide">
+        <span className="font-mono text-[11px] font-semibold text-[#CC9166] tracking-wide px-2 py-0.5 rounded bg-[#CC9166]/10 border border-[#CC9166]/30">
           {sourceId}
         </span>
         {score !== undefined && (
-          <span className="text-[10px] font-mono text-[#9194A1] bg-[#08080A] px-2 py-0.5 rounded-full border border-[#1C1D22]">
-            SIMILARITY {(score * 100).toFixed(1)}%
+          <span className="text-[10px] font-mono text-[#9194A1] bg-[#08080A] px-2 py-0.5 rounded border border-[#1C1D22]">
+            RELEVANCE {(score * 100).toFixed(1)}%
           </span>
         )}
       </div>
-      <h4 className="text-xs font-semibold text-[#FFFFFF] mb-1 font-sans">{title}</h4>
+      <h4 className="text-xs font-medium text-[#FFFFFF] mb-1 font-sans">{title}</h4>
       <p className="text-[11px] text-[#9194A1] font-sans leading-relaxed line-clamp-3">
         {snippet}
       </p>
       <div className="mt-2.5 pt-2 border-t border-[#1C1D22] flex items-center justify-between text-[10px] text-[#777A88] font-mono">
-        <span>TYPE: {displayDocType}</span>
+        <span>DIRECTIVE: {displayDocType}</span>
         <span className="flex items-center gap-1 text-[#8FAF9B]">
-          <CheckCircle2 className="h-3 w-3" /> GROUNDED
+          <CheckCircle2 className="h-3 w-3" /> VERIFIED SOURCE
         </span>
       </div>
     </div>
@@ -528,7 +535,7 @@ export function EvidenceCard({
 export function PolicyDecisionCard({
   action,
   reasonCodes = [],
-  policyVersion = "2025.1",
+  policyVersion = "2026.1",
   isDeterministic = true,
   evidenceSummary,
 }: {
@@ -543,7 +550,7 @@ export function PolicyDecisionCard({
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-mono text-[#9194A1] uppercase tracking-wider flex items-center gap-1.5">
           <Scale className="h-3.5 w-3.5 text-[#CC9166]" />
-          POLICY DECISION
+          DECISION ENGINE
         </span>
         <span className="text-[10px] font-mono text-[#777A88]">
           v{policyVersion}
@@ -552,7 +559,7 @@ export function PolicyDecisionCard({
 
       <div className="flex items-center justify-between py-2 border-y border-[#1C1D22]">
         <div>
-          <p className="text-[10px] font-mono text-[#777A88] uppercase">ACTION ENFORCED</p>
+          <p className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">ACTION ENFORCED</p>
           <p className="font-serif text-3xl text-[#FFFFFF] tracking-tight mt-0.5">
             {action}
           </p>
@@ -562,14 +569,14 @@ export function PolicyDecisionCard({
 
       {reasonCodes.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] font-mono text-[#777A88] uppercase">REASON CODES</p>
+          <p className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">REASONS</p>
           <div className="flex flex-wrap gap-1.5">
             {reasonCodes.map((code, idx) => (
               <span
                 key={idx}
-                className="text-[10px] font-mono px-2 py-0.5 bg-[#121317] border border-[#1C1D22] text-[#E2E3E9] rounded-md"
+                className="text-[10px] font-mono px-2.5 py-1 bg-[#121317] border border-[#1C1D22] text-[#E2E3E9] rounded font-medium"
               >
-                {code}
+                {code.toUpperCase().replace(/_/g, " ")}
               </span>
             ))}
           </div>
@@ -578,7 +585,7 @@ export function PolicyDecisionCard({
 
       {evidenceSummary && evidenceSummary.length > 0 && (
         <div className="space-y-1.5 pt-1">
-          <p className="text-[10px] font-mono text-[#777A88] uppercase">EVIDENCE DIGEST</p>
+          <p className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">DECISION RATIONALE</p>
           <ul className="space-y-1 text-xs text-[#9194A1] font-sans">
             {evidenceSummary.map((item, idx) => (
               <li key={idx} className="flex items-start gap-1.5">
@@ -593,10 +600,10 @@ export function PolicyDecisionCard({
       <div className="pt-2 border-t border-[#1C1D22] flex items-center justify-between text-[11px]">
         <div className="flex items-center gap-1.5 text-[#9194A1]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#CC9166]" />
-          <span>Decision authority</span>
+          <span>Decision authority: policy controls</span>
         </div>
-        <span className="font-mono text-[#CC9166] text-[10px]">
-          {isDeterministic ? "Deterministic Policy Engine" : "Hybrid Enforcer"}
+        <span className="font-mono text-[#8FAF9B] text-[10px]">
+          {isDeterministic ? "Deterministic Enforced" : "Policy Monitored"}
         </span>
       </div>
     </div>

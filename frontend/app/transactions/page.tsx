@@ -8,18 +8,22 @@ import {
   LoadingState,
   ErrorState,
   EmptyState,
-  DataLabel,
   formatINR,
+  formatNumber,
+  formatPct,
 } from "@/components/ui";
 import { useAsync } from "@/hooks/use-async";
-import { fetchTransactions } from "@/lib/api";
-import type { TransactionsResponse } from "@/lib/api";
+import { fetchTransactions, fetchOverview } from "@/lib/api";
+import type { TransactionsResponse, OverviewData } from "@/lib/api";
 import {
   Search,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
   ExternalLink,
+  ShieldAlert,
+  BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -39,6 +43,8 @@ export default function TransactionsPage() {
   const [sortBy, setSortBy] = useState("risk_score");
   const [sortOrder, setSortOrder] = useState("desc");
   const limit = 25;
+
+  const overview = useAsync<OverviewData>(() => fetchOverview(), []);
 
   const fetcher = useCallback(
     () =>
@@ -86,22 +92,26 @@ export default function TransactionsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Editorial Header */}
+        {/* Forensic Financial Ledger Header */}
         <div className="border-b border-[#1C1D22] pb-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="text-[11px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-                Transaction Ledger
+              <div className="text-[11px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#CC9166]" />
+                Forensic Financial Ledger
               </div>
               <h1 className="text-3xl font-serif tracking-tight text-white font-normal mt-1">
                 Transaction Intelligence
               </h1>
               <p className="text-xs text-[#9194A1] font-sans mt-1">
-                High-density forensic ledger with risk scores, network clusters, and policy routing.
+                Review transaction-level risk signals and decision context.
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <DataLabel label="Synthetic Dataset" />
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#8FAF9B]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#8FAF9B]" />
+                <span>Live Audit Stream</span>
+              </div>
               {data.status === "success" && (
                 <div className="text-xs font-mono text-[#777A88]">
                   {data.data.total.toLocaleString()} Records
@@ -110,6 +120,98 @@ export default function TransactionsPage() {
             </div>
           </div>
         </div>
+
+        {/* Compact Visual Analytics Bar */}
+        {overview.status === "success" && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Metric 1: Risk Distribution */}
+            <div className="p-3.5 rounded-lg bg-[#040406] border border-[#1C1D22] flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#777A88] mb-2">
+                <span className="flex items-center gap-1.5 uppercase">
+                  <BarChart3 className="h-3.5 w-3.5 text-[#CC9166]" />
+                  Risk Distribution
+                </span>
+                <span className="text-white font-semibold">
+                  {formatNumber(overview.data.total_transactions)}
+                </span>
+              </div>
+              <div className="h-2 w-full bg-[#121317] rounded-full overflow-hidden flex border border-[#1C1D22]">
+                <div
+                  style={{
+                    width: `${(overview.data.risk_distribution.low / overview.data.total_transactions) * 100}%`,
+                  }}
+                  className="bg-[#8FAF9B]"
+                  title="Low Risk"
+                />
+                <div
+                  style={{
+                    width: `${(overview.data.risk_distribution.medium / overview.data.total_transactions) * 100}%`,
+                  }}
+                  className="bg-[#C7A66B]"
+                  title="Review Risk"
+                />
+                <div
+                  style={{
+                    width: `${(overview.data.risk_distribution.high / overview.data.total_transactions) * 100}%`,
+                  }}
+                  className="bg-[#C47A63]"
+                  title="High Risk"
+                />
+                <div
+                  style={{
+                    width: `${(overview.data.risk_distribution.critical / overview.data.total_transactions) * 100}%`,
+                  }}
+                  className="bg-[#D05B5B]"
+                  title="Critical Risk"
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-mono pt-2 text-[#5E616E]">
+                <span className="text-[#8FAF9B]">Low: {formatNumber(overview.data.risk_distribution.low)}</span>
+                <span className="text-[#C7A66B]">Med: {formatNumber(overview.data.risk_distribution.medium)}</span>
+                <span className="text-[#C47A63]">High: {formatNumber(overview.data.risk_distribution.high)}</span>
+                <span className="text-[#D05B5B]">Crit: {formatNumber(overview.data.risk_distribution.critical)}</span>
+              </div>
+            </div>
+
+            {/* Metric 2: Exposure Concentration */}
+            <div className="p-3.5 rounded-lg bg-[#040406] border border-[#1C1D22] flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#777A88] mb-1">
+                <span className="flex items-center gap-1.5 uppercase">
+                  <ShieldAlert className="h-3.5 w-3.5 text-[#D05B5B]" />
+                  Exposure Concentration
+                </span>
+                <span className="text-[#D05B5B] font-semibold">
+                  {formatPct(overview.data.fraud_rate)}
+                </span>
+              </div>
+              <div className="text-xl font-serif text-white tracking-tight">
+                {formatINR(overview.data.fraud_exposure)}
+              </div>
+              <div className="text-[10px] font-mono text-[#777A88] mt-1 flex items-center justify-between">
+                <span>Concentrated in {overview.data.suspicious_clusters} risk networks</span>
+                <span className="text-[#CC9166]">{overview.data.suspicious_transactions} flagged</span>
+              </div>
+            </div>
+
+            {/* Metric 3: Amount / Risk Relationship */}
+            <div className="p-3.5 rounded-lg bg-[#040406] border border-[#1C1D22] flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#777A88] mb-1">
+                <span className="flex items-center gap-1.5 uppercase">
+                  <TrendingUp className="h-3.5 w-3.5 text-[#AE9357]" />
+                  Amount / Risk Correlation
+                </span>
+                <span className="text-[#AE9357] font-semibold">Hold ≥ 0.85</span>
+              </div>
+              <div className="text-xl font-serif text-white tracking-tight">
+                {formatNumber(overview.data.critical_risk_count)} Priority Holds
+              </div>
+              <div className="text-[10px] font-mono text-[#777A88] mt-1 flex items-center justify-between">
+                <span>Escalation threshold: 0.3700</span>
+                <span className="text-[#8FAF9B]">Auto-clear: &lt;0.3000</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filter Controls Bar */}
         <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -214,6 +316,7 @@ export default function TransactionsPage() {
                       </div>
                     </th>
                     <th className="py-3 px-4">CUSTOMER</th>
+                    <th className="py-3 px-4">MERCHANT</th>
                     <th className="py-3 px-4">DEVICE</th>
                     <th
                       className="py-3 px-4 text-center cursor-pointer hover:text-white transition-colors"
@@ -260,6 +363,10 @@ export default function TransactionsPage() {
 
                         <td className="py-2.5 px-4 font-mono text-xs text-[#9194A1]">
                           {tx.customer_id}
+                        </td>
+
+                        <td className="py-2.5 px-4 font-mono text-xs text-[#9194A1]">
+                          {tx.merchant_id || "—"}
                         </td>
 
                         <td className="py-2.5 px-4 font-mono text-xs text-[#777A88]">

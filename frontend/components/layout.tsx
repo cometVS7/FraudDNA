@@ -28,14 +28,14 @@ interface NavItem {
 const OVERVIEW_NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ListOrdered },
-  { href: "/frauddna", label: "FraudDNA Network", icon: Share2 },
-  { href: "/investigate", label: "Investigate", icon: Search },
-  { href: "/simulation", label: "Simulation", icon: SlidersHorizontal },
-  { href: "/evaluation", label: "Evaluation", icon: BarChart3 },
 ];
 
 const SYSTEM_NAV: NavItem[] = [
-  { href: "/audit", label: "Audit", icon: ClipboardList },
+  { href: "/frauddna", label: "Risk Networks", icon: Share2 },
+  { href: "/investigate", label: "Investigations", icon: Search },
+  { href: "/simulation", label: "Simulation", icon: SlidersHorizontal },
+  { href: "/evaluation", label: "Detection Performance", icon: BarChart3 },
+  { href: "/audit", label: "Decision Audit", icon: ClipboardList },
 ];
 
 export function Sidebar({
@@ -107,7 +107,7 @@ export function Sidebar({
               <span>FraudDNA</span>
             </div>
             <div className="text-[9px] font-mono tracking-[0.14em] text-[#5E616E] leading-none uppercase">
-              Fraud Intelligence
+              Risk Intelligence
             </div>
           </div>
         </Link>
@@ -131,11 +131,11 @@ export function Sidebar({
       {/* Footer System Provenance */}
       <div className="px-4 py-3.5 border-t border-[#1C1D22] bg-[#08080A]/60">
         <div className="flex items-center justify-between text-[10px] font-mono text-[#5E616E]">
-          <span>RAZORPAY 2026</span>
-          <span className="text-[#AE9357]/80">DEFENSE ONLY</span>
+          <span>FRAUDDNA ENTERPRISE</span>
+          <span className="text-[#AE9357]/80">ACTIVE</span>
         </div>
         <div className="mt-1 text-[9px] font-mono text-[#464853] truncate">
-          AI Risk Manager • Track 02
+          Institutional Risk Operations
         </div>
       </div>
     </aside>
@@ -178,21 +178,21 @@ export function TopUtilityBar({ onMenuClick }: { onMenuClick?: () => void }) {
         </button>
         <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
           <Database className="h-3 w-3 text-[#5E616E]" />
-          <span>Synthetic Dataset</span>
+          <span>Transaction Ledger</span>
         </span>
         <span className="hidden sm:inline text-[#2E3038]">•</span>
         <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
           <Cpu className="h-3 w-3 text-[#5E616E]" />
-          <span>Model {apiVersion}</span>
+          <span>Engine {apiVersion}</span>
         </span>
         <span className="hidden md:inline text-[#2E3038]">•</span>
         <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
-          <span>Agent: Bounded Read-Only</span>
+          <span>Policy Controls: Active</span>
         </span>
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#9194A1]">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[10px] font-mono tracking-wider text-[#9194A1]">
           <span
             className={`h-1.5 w-1.5 rounded-full ${
               apiHealth === "healthy"
@@ -202,12 +202,12 @@ export function TopUtilityBar({ onMenuClick }: { onMenuClick?: () => void }) {
                 : "bg-[#D05B5B]"
             }`}
           />
-          <span className="capitalize">
+          <span className="uppercase">
             {apiHealth === "healthy"
-              ? "API Healthy"
+              ? "System Operational"
               : apiHealth === "checking"
-              ? "API Checking"
-              : "API Degraded"}
+              ? "System Connecting"
+              : "System Degraded"}
           </span>
         </div>
       </div>

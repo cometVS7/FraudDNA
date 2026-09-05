@@ -7,7 +7,6 @@ import {
   SectionCard,
   LoadingState,
   ErrorState,
-  DataLabel,
   formatINR,
   formatPct,
   formatNumber,
@@ -105,47 +104,51 @@ export default function SimulationPage() {
         <div className="border-b border-[#1C1D22] pb-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-                COUNTERFACTUAL POLICY OPTIMIZER
+              <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#CC9166]" />
+                Counterfactual Policy Optimizer
               </div>
               <h1 className="text-3xl sm:text-4xl font-serif tracking-tight text-white font-normal mt-1">
                 Risk Simulation
               </h1>
               <p className="text-xs sm:text-sm text-[#9194A1] font-sans mt-1">
-                Change the policy threshold. See what it would have cost.
+                Model the impact of detection thresholds and operational constraints.
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <DataLabel label="Financial Risk Laboratory" />
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#AE9357]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#AE9357]" />
+                <span>Loss Curve Modeling Engine</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Laboratory Controls Panel */}
-        <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-5">
-          <div className="flex items-center justify-between border-b border-[#1C1D22] pb-3 mb-4">
+        {/* Risk Operations Control Panel */}
+        <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#1C1D22] pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4 text-[#CC9166]" />
               <span className="font-mono text-xs text-white font-medium">
-                Simulation Parameter Boundaries
+                Risk Operations Control Parameters
               </span>
             </div>
             <button
               onClick={() => executeSimulation()}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-[#CC9166] text-[#08080A] text-xs font-medium hover:bg-[#CC9166]/90 disabled:opacity-40 transition-all font-sans"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-[#CC9166] text-[#08080A] text-xs font-medium hover:bg-[#CC9166]/90 disabled:opacity-40 transition-all font-sans"
             >
               <Play className="h-3 w-3 fill-current" />
-              <span>{loading ? "Simulating..." : "Execute Simulation"}</span>
+              <span>{loading ? "Computing Loss Curves..." : "Simulate Scenario"}</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Fraud Threshold */}
-            <div>
-              <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                <span className="text-[#777A88]">Fraud Threshold (Hold)</span>
-                <span className="text-[#CC9166] font-semibold">{fraudThreshold.toFixed(2)}</span>
+            {/* Fraud Threshold (Hold) */}
+            <div className="p-3 rounded-md bg-[#121317] border border-[#1C1D22] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#9194A1]">Hold Threshold</span>
+                <span className="text-[#CC9166] font-semibold text-sm">{fraudThreshold.toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -156,17 +159,28 @@ export default function SimulationPage() {
                 onChange={(e) => setFraudThreshold(parseFloat(e.target.value))}
                 className="w-full accent-[#CC9166] cursor-pointer"
               />
-              <div className="flex justify-between text-[9px] font-mono text-[#5E616E] mt-1">
-                <span>0.05 (Aggressive)</span>
-                <span>0.95 (Permissive)</span>
+              <div className="flex flex-wrap gap-1 pt-1">
+                {[0.25, 0.37, 0.50, 0.70, 0.85].map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setFraudThreshold(preset)}
+                    className={`px-1.5 py-0.5 text-[9px] font-mono rounded border transition-colors ${
+                      Math.abs(fraudThreshold - preset) < 0.01
+                        ? "bg-[#CC9166]/10 border-[#CC9166] text-[#CC9166]"
+                        : "bg-[#08080A] border-[#1C1D22] text-[#777A88] hover:text-white"
+                    }`}
+                  >
+                    {preset.toFixed(2)}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Review Threshold */}
-            <div>
-              <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                <span className="text-[#777A88]">Review Threshold</span>
-                <span className="text-[#AE9357] font-semibold">{reviewThreshold.toFixed(2)}</span>
+            <div className="p-3 rounded-md bg-[#121317] border border-[#1C1D22] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#9194A1]">Review Threshold</span>
+                <span className="text-[#AE9357] font-semibold text-sm">{reviewThreshold.toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -177,17 +191,28 @@ export default function SimulationPage() {
                 onChange={(e) => setReviewThreshold(parseFloat(e.target.value))}
                 className="w-full accent-[#AE9357] cursor-pointer"
               />
-              <div className="flex justify-between text-[9px] font-mono text-[#5E616E] mt-1">
-                <span>0.05 (Flag Early)</span>
-                <span>{fraudThreshold.toFixed(2)} (Cap)</span>
+              <div className="flex flex-wrap gap-1 pt-1">
+                {[0.10, 0.20, 0.30].map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => setReviewThreshold(preset)}
+                    className={`px-1.5 py-0.5 text-[9px] font-mono rounded border transition-colors ${
+                      Math.abs(reviewThreshold - preset) < 0.01
+                        ? "bg-[#AE9357]/10 border-[#AE9357] text-[#AE9357]"
+                        : "bg-[#08080A] border-[#1C1D22] text-[#777A88] hover:text-white"
+                    }`}
+                  >
+                    {preset.toFixed(2)}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Cost Per False Positive */}
-            <div>
-              <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                <span className="text-[#777A88]">Cost per False Positive</span>
-                <span className="text-white font-semibold">₹{costPerFP}</span>
+            <div className="p-3 rounded-md bg-[#121317] border border-[#1C1D22] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#9194A1]">Cost / False Positive</span>
+                <span className="text-white font-semibold text-sm">₹{costPerFP}</span>
               </div>
               <input
                 type="number"
@@ -196,18 +221,18 @@ export default function SimulationPage() {
                 step={50}
                 value={costPerFP}
                 onChange={(e) => setCostPerFP(parseInt(e.target.value) || 350)}
-                className="w-full px-3 py-1.5 text-xs bg-[#121317] border border-[#1C1D22] rounded-md text-[#E2E3E9] font-mono focus:outline-none focus:border-[#CC9166]"
+                className="w-full px-2.5 py-1 text-xs bg-[#08080A] border border-[#1C1D22] rounded text-[#E2E3E9] font-mono focus:outline-none focus:border-[#CC9166]"
               />
-              <div className="text-[9px] font-mono text-[#5E616E] mt-1">
-                Analyst review + merchant churn friction
+              <div className="text-[10px] font-mono text-[#5E616E]">
+                Operational friction &amp; merchant churn
               </div>
             </div>
 
-            {/* Review Capacity */}
-            <div>
-              <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                <span className="text-[#777A88]">Daily Review Capacity</span>
-                <span className="text-white font-semibold">{reviewCapacity} txns</span>
+            {/* Daily Review Capacity */}
+            <div className="p-3 rounded-md bg-[#121317] border border-[#1C1D22] space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-[#9194A1]">Daily Review Capacity</span>
+                <span className="text-white font-semibold text-sm">{reviewCapacity} txns</span>
               </div>
               <input
                 type="number"
@@ -216,10 +241,10 @@ export default function SimulationPage() {
                 step={100}
                 value={reviewCapacity}
                 onChange={(e) => setReviewCapacity(parseInt(e.target.value) || 500)}
-                className="w-full px-3 py-1.5 text-xs bg-[#121317] border border-[#1C1D22] rounded-md text-[#E2E3E9] font-mono focus:outline-none focus:border-[#CC9166]"
+                className="w-full px-2.5 py-1 text-xs bg-[#08080A] border border-[#1C1D22] rounded text-[#E2E3E9] font-mono focus:outline-none focus:border-[#CC9166]"
               />
-              <div className="text-[9px] font-mono text-[#5E616E] mt-1">
-                Human analyst throughput limit
+              <div className="text-[10px] font-mono text-[#5E616E]">
+                Operational analyst bandwidth constraint
               </div>
             </div>
           </div>
