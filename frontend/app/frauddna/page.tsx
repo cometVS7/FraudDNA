@@ -1,244 +1,322 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { DashboardLayout } from "@/components/layout";
 import {
   RiskBadge,
   LoadingState,
   ErrorState,
   EmptyState,
-  SectionCard,
+  DataLabel,
   formatINR,
 } from "@/components/ui";
+import { FraudGraph } from "@/components/fraud-graph";
 import { useAsync } from "@/hooks/use-async";
 import { fetchClusters, fetchClusterGraph } from "@/lib/api";
-import type { ClustersResponse, GraphData, ClusterSummary } from "@/lib/api";
+import type { ClustersResponse, GraphData, ClusterSummary, GraphNode } from "@/lib/api";
 import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  type Node,
-  type Edge,
-  MarkerType,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+  Share2,
+  ExternalLink,
+  Users,
+  Smartphone,
+  CreditCard,
+  Store,
+  Layers,
+} from "lucide-react";
 
-const ENTITY_COLORS: Record<string, string> = {
-  customer: "#3b82f6",
-  transaction: "#10b981",
-  device: "#8b5cf6",
-  ip: "#f59e0b",
-  card: "#ec4899",
-  merchant: "#06b6d4",
-};
-
-const ENTITY_ABBREV: Record<string, string> = {
-  customer: "CU",
-  transaction: "TX",
-  device: "DV",
-  ip: "IP",
-  card: "CD",
-  merchant: "ME",
-};
-
-function buildReactFlowData(
-  graphData: GraphData
-): { nodes: Node[]; edges: Edge[] } {
-  const nodeCount = graphData.nodes.length;
-  const radius = Math.max(300, nodeCount * 30);
-
-  const nodes: Node[] = graphData.nodes.map((n, i) => {
-    const angle = (2 * Math.PI * i) / nodeCount;
-    const x = radius * Math.cos(angle) + radius + 100;
-    const y = radius * Math.sin(angle) + radius + 100;
-    const color = ENTITY_COLORS[n.entity_type] || "#6b7280";
-    const isHighRisk = n.risk_score >= 0.7;
-
-    return {
-      id: n.id,
-      position: { x, y },
-      data: {
-        label: (
-          <div className="text-center">
-            <div
-              className="mx-auto mb-1 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-              style={{
-                width: isHighRisk ? 36 : 28,
-                height: isHighRisk ? 36 : 28,
-                backgroundColor: color,
-                boxShadow: isHighRisk ? `0 0 12px ${color}60` : undefined,
-              }}
-            >
-              {ENTITY_ABBREV[n.entity_type] || "?"}
-            </div>
-            <div className="text-[9px] text-gray-600 max-w-[80px] truncate">
-              {n.raw_id}
-            </div>
-            {n.risk_score > 0 && (
-              <div className={`text-[8px] font-mono font-bold ${n.risk_score >= 0.7 ? "text-red-600" : n.risk_score >= 0.37 ? "text-amber-600" : "text-gray-400"}`}>
-                {n.risk_score.toFixed(2)}
-              </div>
-            )}
-          </div>
-        ),
-      },
-      style: {
-        background: "white",
-        border: `2px solid ${isHighRisk ? "#ef4444" : color + "40"}`,
-        borderRadius: "12px",
-        padding: "6px",
-        fontSize: "10px",
-        width: "auto",
-        minWidth: "80px",
-      },
-    };
-  });
-
-  const edges: Edge[] = graphData.edges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    label: e.relation,
-    style: { stroke: "#d1d5db", strokeWidth: 1.5 },
-    labelStyle: { fontSize: 8, fill: "#9ca3af" },
-    markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12, color: "#d1d5db" },
-    animated: false,
-  }));
-
-  return { nodes, edges };
-}
-
-export default function FraudDNAPage() {
-  const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+function FraudDNAContent() {
+  const searchParams = useSearchParams();
+  const initialCluster = searchParams.get("cluster") || null;
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(initialCluster);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
   const clusters = useAsync<ClustersResponse>(
-    () => fetchClusters({ suspicious_only: true, limit: 20, sort_by: "risk_score" }),
+    () => fetchClusters({ suspicious_only: true, limit: 30, sort_by: "risk_score" }),
     []
   );
 
+  const clustersData = clusters.status === "success" ? clusters.data : null;
+
+  // Set default selected cluster if none selected
+  useEffect(() => {
+    if (!selectedClusterId && clustersData && clustersData.clusters.length > 0) {
+      setSelectedClusterId(clustersData.clusters[0].cluster_id);
+    }
+  }, [selectedClusterId, clustersData]);
+
   const graphFetcher = useCallback(() => {
-    if (!selectedCluster) return Promise.resolve(null);
-    return fetchClusterGraph(selectedCluster);
-  }, [selectedCluster]);
+    if (!selectedClusterId) return Promise.resolve(null);
+    return fetchClusterGraph(selectedClusterId);
+  }, [selectedClusterId]);
 
-  const graphData = useAsync<GraphData | null>(graphFetcher, [selectedCluster]);
+  const graphData = useAsync<GraphData | null>(graphFetcher, [selectedClusterId]);
+  const graph = graphData.status === "success" ? graphData.data : null;
 
-  const flowData = useMemo(() => {
-    if (graphData.status !== "success" || !graphData.data) return null;
-    return buildReactFlowData(graphData.data);
-  }, [graphData]);
+  const currentClusterSummary = clustersData?.clusters.find(
+    (c: ClusterSummary) => c.cluster_id === selectedClusterId
+  );
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">FraudDNA Graph</h2>
-          <p className="text-sm text-muted-foreground">
-            Interactive relationship graph — discover hidden connections between entities
-          </p>
+    <div className="space-y-6">
+      {/* Editorial Header */}
+      <div className="border-b border-[#1C1D22] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
+              RELATIONAL RISK MAPPING
+            </div>
+            <h1 className="text-3xl font-serif tracking-tight text-white font-normal mt-1">
+              FraudDNA
+            </h1>
+            <p className="text-xs text-[#9194A1] font-sans mt-1">
+              Find the relationships that individual transactions hide.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <DataLabel label="Graph Topology" />
+            {clustersData && (
+              <span className="text-xs font-mono text-[#777A88]">
+                {clustersData.total_clusters} Coordinated Clusters
+              </span>
+            )}
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Cluster List */}
-          <div className="lg:col-span-1">
-            <SectionCard title="Suspicious Clusters" subtitle="Select a cluster to explore">
-              {clusters.status === "loading" && <LoadingState />}
-              {clusters.status === "error" && <ErrorState error={clusters.error} />}
-              {clusters.status === "success" && (
-                <div className="space-y-1 max-h-[600px] overflow-y-auto">
-                  {clusters.data.clusters.length === 0 && (
-                    <EmptyState title="No suspicious clusters" />
-                  )}
-                  {clusters.data.clusters.map((c: ClusterSummary) => (
+      {/* Main Canvas & Inspector Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Cluster Selection List (3 Cols) */}
+        <div className="lg:col-span-3 space-y-3">
+          <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-3">
+            <div className="text-[10px] font-mono text-[#5E616E] uppercase tracking-wider mb-2 px-1">
+              SUSPICIOUS NETWORKS ({clustersData?.clusters.length || 0})
+            </div>
+
+            {clusters.status === "loading" && <LoadingState message="Loading clusters..." />}
+            {clusters.status === "error" && (
+              <ErrorState title="NETWORK ERROR" error={clusters.error} onRetry={clusters.refetch} />
+            )}
+
+            {clustersData && (
+              <div className="space-y-1.5 max-h-[620px] overflow-y-auto pr-1 custom-scrollbar">
+                {clustersData.clusters.map((c: ClusterSummary) => {
+                  const isSelected = selectedClusterId === c.cluster_id;
+                  return (
                     <button
                       key={c.cluster_id}
-                      onClick={() => setSelectedCluster(c.cluster_id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all text-xs ${
-                        selectedCluster === c.cluster_id
-                          ? "bg-primary/10 border-primary/30 shadow-sm"
-                          : "border-border/50 hover:bg-muted/30"
+                      onClick={() => {
+                        setSelectedClusterId(c.cluster_id);
+                        setSelectedNode(null);
+                      }}
+                      className={`w-full text-left p-2.5 rounded-md border transition-all text-xs ${
+                        isSelected
+                          ? "bg-[#121317] border-[#CC9166] shadow-[0_0_12px_rgba(204,145,102,0.15)]"
+                          : "bg-[#08080A] border-[#1C1D22] hover:bg-[#121317]/60 text-[#9194A1] hover:text-[#E2E3E9]"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono font-medium">{c.cluster_id}</span>
+                        <span className="font-mono text-xs font-semibold text-white">
+                          {c.cluster_id}
+                        </span>
                         <RiskBadge
                           level={
-                            c.cluster_risk_score >= 0.9
+                            c.cluster_risk_score >= 0.85
                               ? "critical"
-                              : c.cluster_risk_score >= 0.7
-                                ? "high"
-                                : "medium"
+                              : c.cluster_risk_score >= 0.6
+                              ? "high"
+                              : "medium"
                           }
                           size="xs"
                         />
                       </div>
-                      <div className="text-muted-foreground">
-                        {c.transaction_count} txns · {c.customer_count} customers · {formatINR(c.suspicious_transaction_amount)}
+                      <div className="flex items-center justify-between text-[10px] font-mono text-[#777A88]">
+                        <span>{c.transaction_count} Txns • {c.customer_count} Cust</span>
+                        <span className="text-[#CC9166]">
+                          {formatINR(c.suspicious_transaction_amount)}
+                        </span>
                       </div>
                     </button>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
+                  );
+                })}
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Graph Canvas */}
-          <div className="lg:col-span-3">
-            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden" style={{ height: 650 }}>
-              {!selectedCluster && (
-                <EmptyState
-                  title="Select a cluster"
-                  description="Choose a suspicious cluster from the left panel to explore its relationship graph"
-                />
-              )}
-              {selectedCluster && graphData.status === "loading" && (
-                <LoadingState message="Loading graph data..." />
-              )}
-              {selectedCluster && graphData.status === "error" && (
-                <ErrorState error={graphData.error} />
-              )}
-              {flowData && (
-                <ReactFlow
-                  nodes={flowData.nodes}
-                  edges={flowData.edges}
-                  fitView
-                  minZoom={0.2}
-                  maxZoom={2}
-                  proOptions={{ hideAttribution: true }}
-                >
-                  <Background color="#f3f4f6" gap={20} />
-                  <Controls
-                    showInteractive={false}
-                    className="bg-white shadow-lg rounded-lg border border-border"
-                  />
-                  <MiniMap
-                    nodeColor={(n) => {
-                      const border = n.style?.border as string;
-                      if (border?.includes("#ef4444")) return "#ef4444";
-                      return "#10b981";
-                    }}
-                    className="rounded-lg border border-border"
-                  />
-                </ReactFlow>
+        {/* Center: Large Graph Canvas (6 Cols) */}
+        <div className="lg:col-span-6 flex flex-col">
+          <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-4 flex-1 flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#1C1D22] pb-3 mb-3">
+              <div className="flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-[#CC9166]" />
+                <span className="font-mono text-xs text-white font-medium">
+                  {selectedClusterId ? `Network Topology / ${selectedClusterId}` : "Network Canvas"}
+                </span>
+              </div>
+              {graph && (
+                <div className="text-[10px] font-mono text-[#777A88]">
+                  {graph.total_nodes} Nodes • {graph.total_edges} Edges
+                </div>
               )}
             </div>
 
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3 mt-3">
-              {Object.entries(ENTITY_COLORS).map(([type, color]) => (
-                <div key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </div>
-              ))}
+            <div className="flex-1 min-h-[580px]">
+              {!selectedClusterId && (
+                <EmptyState
+                  title="SELECT A CLUSTER"
+                  description="Choose a suspicious network from the left ledger to inspect topology."
+                />
+              )}
+              {selectedClusterId && graphData.status === "loading" && (
+                <LoadingState message="Mapping network entity topology..." />
+              )}
+              {selectedClusterId && graphData.status === "error" && (
+                <ErrorState title="GRAPH FAILED" error={graphData.error} onRetry={graphData.refetch} />
+              )}
+              {graph && (
+                <FraudGraph
+                  graphData={graph}
+                  selectedId={selectedNode?.id}
+                  onSelectNode={(node) => setSelectedNode(node)}
+                  className="h-[580px] w-full"
+                />
+              )}
             </div>
           </div>
         </div>
+
+        {/* Right: Cluster & Node Inspector (3 Cols) */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Cluster Deep Inspector Card */}
+          {currentClusterSummary && (
+            <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-4 space-y-3.5">
+              <div className="border-b border-[#1C1D22] pb-2.5">
+                <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#CC9166] font-semibold">
+                  CLUSTER METRICS
+                </div>
+                <h3 className="text-base font-serif text-white font-normal mt-0.5">
+                  {currentClusterSummary.cluster_id}
+                </h3>
+              </div>
+
+              <div className="space-y-2.5 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88]">Cluster Risk Score:</span>
+                  <span className="font-semibold text-white">
+                    {currentClusterSummary.cluster_risk_score.toFixed(4)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88]">Suspicious Status:</span>
+                  <RiskBadge
+                    level={currentClusterSummary.is_suspicious ? "critical" : "low"}
+                    size="xs"
+                  />
+                </div>
+                <div className="flex items-center justify-between border-t border-[#1C1D22]/60 pt-2">
+                  <span className="text-[#777A88] flex items-center gap-1.5">
+                    <Layers className="h-3 w-3 text-[#5E616E]" />
+                    <span>Transactions</span>
+                  </span>
+                  <span className="text-white">{currentClusterSummary.transaction_count}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88] flex items-center gap-1.5">
+                    <Users className="h-3 w-3 text-[#5E616E]" />
+                    <span>Customers</span>
+                  </span>
+                  <span className="text-white">{currentClusterSummary.customer_count}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88] flex items-center gap-1.5">
+                    <Smartphone className="h-3 w-3 text-[#5E616E]" />
+                    <span>Devices</span>
+                  </span>
+                  <span className="text-white">{currentClusterSummary.device_count}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88] flex items-center gap-1.5">
+                    <CreditCard className="h-3 w-3 text-[#5E616E]" />
+                    <span>Cards</span>
+                  </span>
+                  <span className="text-white">{currentClusterSummary.card_count}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#777A88] flex items-center gap-1.5">
+                    <Store className="h-3 w-3 text-[#5E616E]" />
+                    <span>Merchants</span>
+                  </span>
+                  <span className="text-white">{currentClusterSummary.merchant_count}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#1C1D22]/60 pt-2">
+                  <span className="text-[#777A88]">Total Fraud Volume:</span>
+                  <span className="text-[#CC9166] font-semibold">
+                    {formatINR(currentClusterSummary.suspicious_transaction_amount)}
+                  </span>
+                </div>
+              </div>
+
+              {currentClusterSummary.primary_reason && (
+                <div className="pt-2 border-t border-[#1C1D22]">
+                  <div className="text-[10px] font-mono text-[#5E616E] uppercase mb-1">
+                    Primary Attack Signature
+                  </div>
+                  <p className="text-xs text-[#C7A66B] font-sans leading-relaxed">
+                    {currentClusterSummary.primary_reason}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Node Inspector Card (when a user clicks a node) */}
+          {selectedNode && (
+            <div className="bg-[#040406] border border-[#CC9166]/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#1C1D22] pb-2">
+                <span className="text-[10px] font-mono uppercase text-[#CC9166] font-semibold">
+                  Selected Node
+                </span>
+                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#121317] text-[#9194A1]">
+                  {selectedNode.entity_type}
+                </span>
+              </div>
+              <div className="space-y-1.5 text-xs font-mono">
+                <div className="text-white font-semibold break-all">
+                  {selectedNode.raw_id || selectedNode.id}
+                </div>
+                {selectedNode.risk_score > 0 && (
+                  <div className="text-[11px] text-[#D05B5B]">
+                    Risk Score: {selectedNode.risk_score.toFixed(4)}
+                  </div>
+                )}
+                {selectedNode.entity_type === "transaction" && (
+                  <div className="pt-2">
+                    <Link
+                      href={`/investigate?tx=${selectedNode.raw_id || selectedNode.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-sans text-[#CC9166] hover:underline"
+                    >
+                      <span>Open in Forensic Console</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+export default function FraudDNAPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={<LoadingState message="Connecting to FraudDNA graph engine..." />}>
+        <FraudDNAContent />
+      </Suspense>
     </DashboardLayout>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+import Link from "next/link";
 import { DashboardLayout } from "@/components/layout";
 import {
   MetricCard,
@@ -13,15 +15,16 @@ import {
   formatNumber,
 } from "@/components/ui";
 import { useAsync } from "@/hooks/use-async";
-import { fetchOverview, fetchClusters } from "@/lib/api";
-import type { OverviewData, ClustersResponse } from "@/lib/api";
+import { fetchOverview, fetchClusters, fetchTransactions } from "@/lib/api";
+import type { OverviewData, ClustersResponse, TransactionsResponse } from "@/lib/api";
 import {
-  Shield,
-  AlertTriangle,
-  Eye,
-  GitBranch,
-  IndianRupee,
   TrendingUp,
+  Eye,
+  Share2,
+  ArrowRight,
+  ShieldAlert,
+  Search,
+  CheckCircle2,
 } from "lucide-react";
 import {
   BarChart,
@@ -36,12 +39,12 @@ import {
   Cell,
 } from "recharts";
 
-const RISK_COLORS = {
-  low: "#10b981",
-  medium: "#f59e0b",
-  high: "#f97316",
-  critical: "#ef4444",
-};
+const RISK_BAR_COLORS = [
+  "#8FAF9B", // Low
+  "#C7A66B", // Review / Medium
+  "#C47A63", // High
+  "#D05B5B", // Critical
+];
 
 export default function OverviewPage() {
   const overview = useAsync<OverviewData>(() => fetchOverview(), []);
@@ -49,243 +52,450 @@ export default function OverviewPage() {
     () => fetchClusters({ suspicious_only: true, limit: 5 }),
     []
   );
+  const recentRiskTx = useAsync<TransactionsResponse>(
+    () =>
+      fetchTransactions({
+        limit: 5,
+        sort_by: "risk_score",
+        sort_order: "desc",
+        suspicious_only: true,
+      }),
+    []
+  );
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Risk Overview
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              FraudDNA fraud intelligence dashboard
-            </p>
+      <div className="space-y-8">
+        {/* Executive Header */}
+        <div className="border-b border-[#1C1D22] pb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="text-[11px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
+                Risk Intelligence
+              </div>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif tracking-tight text-white font-normal">
+                See the risk before it becomes a loss.
+              </h1>
+              <p className="text-sm md:text-base text-[#9194A1] max-w-3xl font-sans leading-relaxed">
+                A live view of transaction risk, coordinated fraud networks,
+                investigation activity, and financial exposure across the payment ecosystem.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 self-start md:self-auto">
+              <DataLabel label="Synthetic Dataset" />
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-xs font-mono text-[#777A88]">
+                <span>Seed #42</span>
+              </div>
+            </div>
           </div>
-          <DataLabel label="Synthetic Dataset" />
         </div>
 
-        {overview.status === "loading" && <LoadingState message="Loading overview..." />}
+        {overview.status === "loading" && (
+          <LoadingState message="Connecting to fraud intelligence kernel..." />
+        )}
         {overview.status === "error" && (
-          <ErrorState error={overview.error} onRetry={overview.refetch} />
+          <ErrorState
+            title="RISK INTELLIGENCE UNAVAILABLE"
+            error={overview.error}
+            onRetry={overview.refetch}
+          />
         )}
 
         {overview.status === "success" && (
           <>
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Primary KPI Grid: 4 Core Cards as Specified */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <MetricCard
                 label="Transactions"
                 value={formatNumber(overview.data.total_transactions)}
-                sublabel="Total volume"
+                sublabel="Total processed volume"
                 icon={<TrendingUp className="h-4 w-4" />}
-              />
-              <MetricCard
-                label="Fraud Detected"
-                value={formatNumber(overview.data.fraud_count)}
-                sublabel={`${formatPct(overview.data.fraud_rate)} rate`}
-                variant="danger"
-                icon={<AlertTriangle className="h-4 w-4" />}
-              />
-              <MetricCard
-                label="Suspicious"
-                value={formatNumber(overview.data.suspicious_transactions)}
-                sublabel="Score ≥ 0.37"
-                variant="warning"
-                icon={<Eye className="h-4 w-4" />}
-              />
-              <MetricCard
-                label="High Risk"
-                value={formatNumber(overview.data.high_risk_count)}
-                sublabel={`${overview.data.critical_risk_count} critical`}
-                variant="danger"
-                icon={<Shield className="h-4 w-4" />}
-              />
-              <MetricCard
-                label="Fraud Clusters"
-                value={overview.data.suspicious_clusters}
-                sublabel={`of ${overview.data.total_clusters} total`}
-                variant="warning"
-                icon={<GitBranch className="h-4 w-4" />}
               />
               <MetricCard
                 label="Fraud Exposure"
                 value={formatINR(overview.data.fraud_exposure)}
-                sublabel="Total fraud amount"
+                sublabel={`${formatPct(overview.data.fraud_rate)} overall attack rate`}
                 variant="danger"
-                icon={<IndianRupee className="h-4 w-4" />}
+                icon={<ShieldAlert className="h-4 w-4" />}
+              />
+              <MetricCard
+                label="Suspicious Transactions"
+                value={formatNumber(overview.data.suspicious_transactions)}
+                sublabel={`${overview.data.critical_risk_count} critical • score ≥ 0.37`}
+                variant="warning"
+                icon={<Eye className="h-4 w-4" />}
+              />
+              <MetricCard
+                label="Suspicious Clusters"
+                value={overview.data.suspicious_clusters}
+                sublabel={`of ${overview.data.total_clusters} isolated network clusters`}
+                variant="warning"
+                icon={<Share2 className="h-4 w-4" />}
               />
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Risk Distribution */}
-              <SectionCard title="Risk Distribution" subtitle="Transaction classification by risk tier">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[
-                        {
-                          name: "Low",
-                          value: overview.data.risk_distribution.low,
-                          fill: RISK_COLORS.low,
-                        },
-                        {
-                          name: "Medium",
-                          value: overview.data.risk_distribution.medium,
-                          fill: RISK_COLORS.medium,
-                        },
-                        {
-                          name: "High",
-                          value: overview.data.risk_distribution.high,
-                          fill: RISK_COLORS.high,
-                        },
-                        {
-                          name: "Critical",
-                          value: overview.data.risk_distribution.critical,
-                          fill: RISK_COLORS.critical,
-                        },
-                      ]}
-                      margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "1px solid #e5e7eb",
-                          fontSize: "12px",
-                        }}
-                      />
-                      <Bar
-                        dataKey="value"
-                        radius={[6, 6, 0, 0]}
-                        fill="#10b981"
-                      >
-                        {[
-                          RISK_COLORS.low,
-                          RISK_COLORS.medium,
-                          RISK_COLORS.high,
-                          RISK_COLORS.critical,
-                        ].map((color, idx) => (
-                          <Cell key={idx} fill={color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </SectionCard>
-
-              {/* Fraud vs Legitimate */}
-              <SectionCard title="Fraud vs Legitimate" subtitle="Ground-truth classification">
-                <div className="h-64 flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
+            {/* Analytical Visualizations Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Risk Distribution Card */}
+              <div className="lg:col-span-7">
+                <SectionCard
+                  title="Risk Distribution"
+                  subtitle="Volume partition by ML score severity tiers"
+                >
+                  <div className="h-68 w-full pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
                         data={[
                           {
-                            name: "Legitimate",
-                            value: overview.data.legitimate_count,
+                            name: "Low (<0.37)",
+                            tier: "Low",
+                            value: overview.data.risk_distribution.low,
+                            fill: RISK_BAR_COLORS[0],
                           },
                           {
-                            name: "Fraud",
-                            value: overview.data.fraud_count,
+                            name: "Review (0.37-0.70)",
+                            tier: "Review",
+                            value: overview.data.risk_distribution.medium,
+                            fill: RISK_BAR_COLORS[1],
+                          },
+                          {
+                            name: "High (0.70-0.90)",
+                            tier: "High",
+                            value: overview.data.risk_distribution.high,
+                            fill: RISK_BAR_COLORS[2],
+                          },
+                          {
+                            name: "Critical (≥0.90)",
+                            tier: "Critical",
+                            value: overview.data.risk_distribution.critical,
+                            fill: RISK_BAR_COLORS[3],
                           },
                         ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={3}
-                        dataKey="value"
+                        margin={{ top: 12, right: 16, bottom: 4, left: 0 }}
                       >
-                        <Cell fill="#10b981" />
-                        <Cell fill="#ef4444" />
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "1px solid #e5e7eb",
-                          fontSize: "12px",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex justify-center gap-6 mt-2">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    Legitimate ({formatNumber(overview.data.legitimate_count)})
+                        <CartesianGrid
+                          strokeDasharray="2 4"
+                          stroke="#1C1D22"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fill: "#777A88", fontSize: 11, fontFamily: "var(--font-inter)" }}
+                          axisLine={{ stroke: "#1C1D22" }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: "#777A88", fontSize: 11, fontFamily: "var(--font-mono)" }}
+                          axisLine={{ stroke: "#1C1D22" }}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#040406",
+                            borderColor: "#1C1D22",
+                            borderRadius: "6px",
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
+                            fontSize: "12px",
+                            fontFamily: "var(--font-inter)",
+                            color: "#E2E3E9",
+                          }}
+                          itemStyle={{ color: "#E2E3E9" }}
+                          cursor={{ fill: "rgba(255,255,255,0.02)" }}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[4, 4, 0, 0]}
+                        >
+                          {RISK_BAR_COLORS.map((color, idx) => (
+                            <Cell key={`cell-${idx}`} fill={color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    Fraud ({formatNumber(overview.data.fraud_count)})
+                  <div className="grid grid-cols-4 gap-2 pt-4 mt-2 border-t border-[#1C1D22] text-center">
+                    <div>
+                      <div className="text-[10px] font-mono text-[#5E616E]">LOW</div>
+                      <div className="text-xs font-mono text-[#8FAF9B]">
+                        {formatNumber(overview.data.risk_distribution.low)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono text-[#5E616E]">REVIEW</div>
+                      <div className="text-xs font-mono text-[#C7A66B]">
+                        {formatNumber(overview.data.risk_distribution.medium)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono text-[#5E616E]">HIGH</div>
+                      <div className="text-xs font-mono text-[#C47A63]">
+                        {formatNumber(overview.data.risk_distribution.high)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono text-[#5E616E]">CRITICAL</div>
+                      <div className="text-xs font-mono text-[#D05B5B]">
+                        {formatNumber(overview.data.risk_distribution.critical)}
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+              </div>
+
+              {/* Fraud Exposure & Volume Composition Card */}
+              <div className="lg:col-span-5">
+                <SectionCard
+                  title="Fraud Exposure"
+                  subtitle="Ground-truth classification & exposure split"
+                >
+                  <div className="h-56 flex items-center justify-center pt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            {
+                              name: "Legitimate",
+                              value: overview.data.legitimate_count,
+                              fill: "#1C1D22",
+                            },
+                            {
+                              name: "Confirmed Fraud",
+                              value: overview.data.fraud_count,
+                              fill: "#C47A63",
+                            },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={64}
+                          outerRadius={88}
+                          stroke="#08080A"
+                          strokeWidth={3}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          <Cell fill="#2E3038" />
+                          <Cell fill="#D05B5B" />
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#040406",
+                            borderColor: "#1C1D22",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                            color: "#E2E3E9",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-2.5 pt-4 border-t border-[#1C1D22]">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#2E3038]" />
+                        <span className="text-[#9194A1]">Legitimate Traffic</span>
+                      </div>
+                      <span className="font-mono text-[#E2E3E9]">
+                        {formatNumber(overview.data.legitimate_count)} ({formatPct(1 - overview.data.fraud_rate)})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#D05B5B]" />
+                        <span className="text-[#9194A1]">Fraud Incident Volume</span>
+                      </div>
+                      <span className="font-mono text-[#D05B5B]">
+                        {formatNumber(overview.data.fraud_count)} ({formatPct(overview.data.fraud_rate)})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-[#1C1D22]/60">
+                      <span className="text-[#777A88]">Direct Monetary Loss Exposure</span>
+                      <span className="font-mono font-medium text-[#CC9166]">
+                        {formatINR(overview.data.fraud_exposure)}
+                      </span>
+                    </div>
+                  </div>
+                </SectionCard>
+              </div>
+            </div>
+
+            {/* Lower Intelligence Row: 3 Panels (Recent High Risk, Networks, Investigation Activity) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Panel 1: Recent High-Risk Activity */}
+              <SectionCard
+                title="Recent High-Risk Activity"
+                subtitle="Priority transactions flagged by the model"
+                action={
+                  <Link
+                    href="/transactions"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-[#CC9166] hover:text-[#E2E3E9] transition-colors"
+                  >
+                    <span>All Ledger</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                }
+              >
+                {recentRiskTx.status === "loading" && <LoadingState message="Loading high-risk events..." />}
+                {recentRiskTx.status === "error" && (
+                  <div className="text-xs text-[#C47A63] py-4">Failed to load high-risk ledger.</div>
+                )}
+                {recentRiskTx.status === "success" && (
+                  <div className="divide-y divide-[#1C1D22]">
+                    {recentRiskTx.data.transactions.map((tx) => (
+                      <div
+                        key={tx.transaction_id}
+                        className="py-3 flex items-center justify-between gap-3 group hover:bg-[#121317]/40 px-1 rounded transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/investigate?tx=${tx.transaction_id}`}
+                              className="font-mono text-xs text-white group-hover:text-[#CC9166] transition-colors truncate"
+                            >
+                              {tx.transaction_id}
+                            </Link>
+                            <RiskBadge level={tx.risk_level} size="xs" />
+                          </div>
+                          <div className="text-[10px] font-mono text-[#5E616E] mt-0.5 truncate">
+                            Cust: {tx.customer_id} • Device: {tx.device_id.slice(0, 8)}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-mono text-xs text-[#E2E3E9]">
+                            {formatINR(tx.amount)}
+                          </div>
+                          <div className="text-[10px] font-mono text-[#C47A63]">
+                            Score: {tx.risk_score.toFixed(3)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* Panel 2: FraudDNA Networks */}
+              <SectionCard
+                title="FraudDNA Networks"
+                subtitle="Coordinated syndicates & clusters"
+                action={
+                  <Link
+                    href="/frauddna"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-[#CC9166] hover:text-[#E2E3E9] transition-colors"
+                  >
+                    <span>Graph View</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                }
+              >
+                {clusters.status === "loading" && <LoadingState message="Loading network clusters..." />}
+                {clusters.status === "error" && (
+                  <div className="text-xs text-[#C47A63] py-4">Failed to load clusters.</div>
+                )}
+                {clusters.status === "success" && (
+                  <div className="divide-y divide-[#1C1D22]">
+                    {clusters.data.clusters.map((c) => (
+                      <div
+                        key={c.cluster_id}
+                        className="py-3 group hover:bg-[#121317]/40 px-1 rounded transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-white font-medium">
+                              {c.cluster_id}
+                            </span>
+                            <RiskBadge
+                              level={
+                                c.cluster_risk_score >= 0.9
+                                  ? "critical"
+                                  : c.cluster_risk_score >= 0.7
+                                  ? "high"
+                                  : "medium"
+                              }
+                              size="xs"
+                            />
+                          </div>
+                          <span className="font-mono text-xs text-[#CC9166]">
+                            {formatINR(c.suspicious_transaction_amount)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-[#5E616E]">
+                          <span>
+                            {c.transaction_count} txns • {c.customer_count} cust • {c.device_count} dev
+                          </span>
+                          <span className="text-[#9194A1] truncate max-w-[140px]">
+                            {c.primary_reason}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* Panel 3: Investigation Activity */}
+              <SectionCard
+                title="Investigation Activity"
+                subtitle="Autonomous forensic reasoning pipeline"
+                action={
+                  <Link
+                    href="/investigate"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-[#CC9166] hover:text-[#E2E3E9] transition-colors"
+                  >
+                    <span>Console</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                }
+              >
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-md bg-[#121317] border border-[#1C1D22] space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-[#8FAF9B] animate-pulse" />
+                      <span className="text-xs font-mono font-medium text-white">
+                        Bounded Read-Only Agent Active
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#9194A1] leading-relaxed">
+                      Investigates transactions using read-only graph traversal, SHAP
+                      feature attributions, and grounded regulatory defense guidelines.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-[#5E616E]">
+                      Inspection Capabilities
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono text-[#9194A1]">
+                      <div className="p-2 rounded bg-[#040406] border border-[#1C1D22] flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#CC9166]" />
+                        <span>7 Forensic Tools</span>
+                      </div>
+                      <div className="p-2 rounded bg-[#040406] border border-[#1C1D22] flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#AE9357]" />
+                        <span>Vector RAG Grounded</span>
+                      </div>
+                      <div className="p-2 rounded bg-[#040406] border border-[#1C1D22] flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#8FAF9B]" />
+                        <span>Deterministic Decider</span>
+                      </div>
+                      <div className="p-2 rounded bg-[#040406] border border-[#1C1D22] flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#777A88]" />
+                        <span>Immutable Audit Trail</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/investigate"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-[#CC9166] text-[#08080A] font-medium text-xs hover:bg-[#CC9166]/90 transition-all font-sans"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                      <span>Launch Forensic Investigation</span>
+                    </Link>
                   </div>
                 </div>
               </SectionCard>
             </div>
-
-            {/* Suspicious Clusters Table */}
-            {clusters.status === "success" &&
-              clusters.data.clusters.length > 0 && (
-                <SectionCard
-                  title="Suspicious Clusters"
-                  subtitle="Top coordinated fraud patterns detected by FraudDNA"
-                >
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                          <th className="text-left py-2 px-3 font-medium">Cluster</th>
-                          <th className="text-left py-2 px-3 font-medium">Risk</th>
-                          <th className="text-right py-2 px-3 font-medium">Txns</th>
-                          <th className="text-right py-2 px-3 font-medium">Customers</th>
-                          <th className="text-right py-2 px-3 font-medium">Amount</th>
-                          <th className="text-left py-2 px-3 font-medium">Reason</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clusters.data.clusters.map((c) => (
-                          <tr
-                            key={c.cluster_id}
-                            className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                          >
-                            <td className="py-2.5 px-3 font-mono text-xs">
-                              {c.cluster_id}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <RiskBadge
-                                level={
-                                  c.cluster_risk_score >= 0.9
-                                    ? "critical"
-                                    : c.cluster_risk_score >= 0.7
-                                      ? "high"
-                                      : "medium"
-                                }
-                                size="xs"
-                              />
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono text-xs">
-                              {c.transaction_count}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono text-xs">
-                              {c.customer_count}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono text-xs">
-                              {formatINR(c.suspicious_transaction_amount)}
-                            </td>
-                            <td className="py-2.5 px-3 text-xs text-muted-foreground max-w-[200px] truncate">
-                              {c.primary_reason}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </SectionCard>
-              )}
           </>
         )}
       </div>

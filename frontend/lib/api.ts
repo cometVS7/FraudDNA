@@ -64,6 +64,19 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   return res.json() as Promise<T>;
 }
 
+// ─── Health ──────────────────────────────────────────────────
+export interface HealthResponse {
+  status: string;
+  service: string;
+  version: string;
+  environment: string;
+  timestamp: string;
+}
+
+export function fetchHealth(): Promise<HealthResponse> {
+  return request<HealthResponse>("/health");
+}
+
 // ─── Overview ────────────────────────────────────────────────
 export interface OverviewData {
   total_transactions: number;
