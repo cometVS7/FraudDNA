@@ -88,47 +88,29 @@ Fully integrated Next.js application backed by actual live backend endpoints:
 - **Evaluation (`/evaluation`)**: Held-out test performance (AUC-ROC, AP, F1), confusion matrix, scenario catch rates, and transparent synthetic data disclosures
 - **Audit Trail (`/audit`)**: Verifiable investigation timeline, evidence verification, and deterministic decision hash inspection
 
-## Phase 9 — Failure Recovery
-Demonstrate:
-- LLM unavailable
-- RAG unavailable
-- agent timeout
-- duplicate request
-- partial evidence
-
-## Phase 10 — Testing and Hardening
-- backend tests
-- ML evaluation checks
-- graph tests
-- policy tests
-- simulation tests
-- API tests
-- frontend checks
-- lint/type checks
-- dependency/security checks
-
-## Phase 11 — Deployment
-- production environment variables
-- Docker build
-- backend deployment
-- database deployment
-- frontend deployment
-- GitHub Actions
-
-## Phase 12 — Final Demo
-Demo sequence:
-1. Start with normal-looking transactions.
-2. Show transaction-level risk.
-3. Reveal hidden relationships.
-4. Show suspicious cluster.
-5. Show XAI.
-6. Run AI investigation.
-7. Show grounded evidence.
-8. Show deterministic decision.
-9. Show audit trail.
-10. Change threshold in simulation and show business impact.
-
-## Scope Rule
-If time is limited, the minimum vertical slice is:
-
-**ML detector + held-out evaluation + false-positive cost + FraudDNA graph + XAI + working investigation + policy decision + risk simulation.**
+## Phase 7 — Final Hardening, End-to-End Validation & Submission Readiness [COMPLETED]
+- **Full Chain E2E Validation**: Transaction → LightGBM ML Risk → Tree SHAP → FraudDNA Graph → Cluster Context → RAG Grounding → Bounded LangGraph Agent → Deterministic Policy Engine → Immutable Audit Trail → Dashboard APIs → Simulation Engine
+- **7 E2E Case Scenarios**:
+  - Case A: Known legitimate transaction (`tx_0000000`) travels cleanly to `ALLOW`
+  - Case B: Individual anomaly (`tx_0000006`) elevated to `REVIEW`/`HOLD`
+  - Case C: Coordinated device syndicate (`tx_0001991`) with shared entity clustering, grounded RAG evidence, and deterministic `HOLD`
+  - Case D: AI agent offline / missing API credentials fallback to deterministic reasoning
+  - Case E: RAG database unreachable fallback to in-memory store without hallucinating citations
+  - Case F: Malformed / nonexistent transaction IDs rejected cleanly (404 / 422)
+  - Case G: Deterministic policy idempotency & reproducibility
+- **Failure Recovery & Degradation Safety**:
+  - LLM unavailable → structured offline deterministic fallback
+  - RAG unavailable → in-memory cosine fallback with degraded status logging
+  - Agent step timeout → bounded step limit ceiling strictly enforced
+  - Malformed inputs → Pydantic v2 strict request validation
+- **Deployment & Docker Hardening**:
+  - Root `Dockerfile` updated to copy ML models, feature pipelines, and curated knowledge base
+  - `docker-compose.yml` updated with correct build context
+  - GitHub Actions CI updated with ESLint, TypeScript, and full backend test gates
+- **Final Quality Gate**:
+  - 117/117 backend tests passing (pytest)
+  - Ruff linter & format: 0 errors
+  - Mypy static typing: 0 errors across 54 source files
+  - ESLint: 0 errors
+  - TypeScript: 0 type errors
+  - Next.js production build: 9/9 static routes compiled cleanly

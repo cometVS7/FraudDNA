@@ -246,6 +246,8 @@ async def get_evaluation() -> dict[str, Any]:
     """Return persisted ML evaluation metrics."""
     metrics_path = Path("ml/evaluation/metrics.json")
     if not metrics_path.exists():
+        metrics_path = Path("../ml/evaluation/metrics.json")
+    if not metrics_path.exists():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Evaluation metrics not available.",

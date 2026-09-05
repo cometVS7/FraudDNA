@@ -51,6 +51,16 @@ class SimulationEngine:
             return
 
         if not self.data_path.exists():
+            alt_data = Path("..") / self.data_path
+            if alt_data.exists():
+                self.data_path = alt_data
+
+        if not self.models_dir.exists():
+            alt_models = Path("..") / self.models_dir
+            if alt_models.exists():
+                self.models_dir = alt_models
+
+        if not self.data_path.exists():
             raise FileNotFoundError(f"Transaction dataset not found at {self.data_path}")
 
         df = pd.read_csv(self.data_path)
