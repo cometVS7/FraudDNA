@@ -1,3 +1,4 @@
+# FraudDNA Production Backend Dockerfile (Render / Production Container)
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -11,13 +12,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-COPY pyproject.toml ./
+# Install python dependencies from backend package specification
+COPY backend/pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
-# Copy application source code
-COPY app ./app
+# Copy application code, ML artifacts, and knowledge documents
+COPY backend/app ./app
+COPY ml ./ml
+COPY knowledge ./knowledge
 
 EXPOSE 8000
 

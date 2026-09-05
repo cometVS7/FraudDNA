@@ -38,6 +38,16 @@ jobs:
         run: |
           pytest backend/tests -v --tb=short
 
+      - name: Build & Verify Production Docker Image
+        run: |
+          docker build -t frauddna-backend:prod -f backend/Dockerfile .
+          echo "Verifying ML and application artifacts in container..."
+          docker run --rm frauddna-backend:prod ls -la /app/app
+          docker run --rm frauddna-backend:prod ls -la /app/ml/data/transactions.csv
+          docker run --rm frauddna-backend:prod ls -la /app/ml/models/lightgbm_model.joblib
+          docker run --rm frauddna-backend:prod ls -la /app/ml/models/feature_pipeline.joblib
+          docker run --rm frauddna-backend:prod python -c "from app.graph.service import get_graph_service; gs = get_graph_service(); gs.initialize(); print('SUCCESS: GraphService initialized inside container with', len(gs.graph.nodes), 'nodes')"
+
   frontend-checks:
     name: Frontend Lint, Type Check & Build
     runs-on: ubuntu-latest
