@@ -55,23 +55,20 @@ Do not implement fraud detection yet.
 - failure handling & graceful degradation without hallucinated evidence
 - comprehensive automated test suite (49/49 passing across entire backend)
 
-## Phase 5 — AI Investigation Agent
-- bounded LangGraph workflow
-- allowlisted tools
-- max steps
-- timeouts
-- structured output
-- evidence synthesis
-- safe fallback
+## Phase 5 — AI Investigation Agent & Policy Engine [COMPLETED]
+- bounded LangGraph investigation workflow with structured state machine
+- strict allowlist of 7 read-only investigation tools (zero SQL/code execution/mutation)
+- max-step budget cap and step-level execution time observability
+- structured Pydantic findings output (`AgentInvestigationOutput`)
+- grounding across ML risk model, XAI Tree SHAP, FraudDNA graph, clusters, and RAG knowledge
+- deterministic safety fallbacks on missing dependencies or LLM unavailability
+- deterministic policy engine producing `ALLOW`, `REVIEW`, `HOLD` actions
+- auditable reason codes and reproducible decision hashes
+- REST API endpoints (`POST /api/v1/agent/investigate`, `POST /api/v1/decisions/evaluate`, `GET /api/v1/decisions/{transaction_id}`)
+- comprehensive automated unit and integration tests
 
-## Phase 6 — Deterministic Policy Engine
-- ALLOW/REVIEW/HOLD
-- model/graph/evidence signals
-- deterministic logic
-- policy reasoning
-- audit record
+## Phase 6 — Risk Simulation
 
-## Phase 7 — Risk Simulation
 - configurable thresholds
 - replay dataset
 - fraud caught
