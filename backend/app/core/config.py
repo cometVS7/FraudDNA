@@ -1,9 +1,29 @@
 """FraudDNA Core Settings Configuration."""
 
+import sys
+from pathlib import Path
 from typing import Any
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def ensure_ml_on_sys_path() -> None:
+    """Ensure repository root containing the 'ml' module is on sys.path for joblib unpickling."""
+    config_file = Path(__file__).resolve()
+    for candidate in [
+        config_file.parent.parent.parent.parent,
+        config_file.parent.parent.parent,
+        Path.cwd(),
+        Path.cwd().parent,
+    ]:
+        if (candidate / "ml").is_dir() and str(candidate) not in sys.path:
+            sys.path.insert(0, str(candidate))
+            break
+
+
+# Ensure sys.path is configured immediately on import
+ensure_ml_on_sys_path()
 
 
 class Settings(BaseSettings):
@@ -57,7 +77,7 @@ class Settings(BaseSettings):
                 origins = [
                     item.strip().rstrip("/") for item in v_trimmed.split(",") if item.strip()
                 ]
-        elif isinstance(v, (list, tuple, set)):
+        elif isinstance(v, list | tuple | set):
             origins = [str(item).strip().rstrip("/") for item in v if str(item).strip()]
 
         default_origins = [

@@ -27,12 +27,12 @@ jobs:
 
       - name: Ruff Lint & Format Check
         run: |
-          ruff check backend
-          ruff format --check backend
+          ruff check --config backend/pyproject.toml backend
+          ruff format --check --config backend/pyproject.toml backend
 
       - name: Mypy Type Check
         run: |
-          mypy backend/app
+          mypy --config-file backend/pyproject.toml backend/app
 
       - name: Run Backend Tests
         run: |

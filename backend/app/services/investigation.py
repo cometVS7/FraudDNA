@@ -6,14 +6,16 @@ deterministic evidence synthesis.
 """
 
 import hashlib
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import joblib  # type: ignore[import-untyped]
+import joblib
 import numpy as np
 import pandas as pd
 
+from app.core.config import ensure_ml_on_sys_path
 from app.graph.models import EntityType, make_node_id, parse_node_id
 from app.graph.service import GraphService, get_graph_service
 from app.schemas.investigation import (
@@ -29,6 +31,8 @@ from app.schemas.investigation import (
     RiskFactor,
     RiskLevel,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionNotFoundError(Exception):
@@ -56,28 +60,38 @@ class InvestigationService:
         self._investigations_cache: dict[str, InvestigationResponse] = {}
 
     def _load_ml_components(self) -> None:
-        """Load trained LightGBM model and FeaturePipeline artifacts if available."""
-        if self._models_loaded:
+        """Load trained LightGBM model and FeaturePipeline artifacts."""
+        if self._models_loaded and self._model is not None and self._pipeline is not None:
             return
 
-        if not self.models_dir.exists():
-            alt_models = Path("..") / self.models_dir
+        models_dir = self.models_dir
+        if not models_dir.exists():
+            alt_models = Path("..") / models_dir
             if alt_models.exists():
+                models_dir = alt_models
                 self.models_dir = alt_models
 
-        model_path = self.models_dir / "lightgbm_model.joblib"
-        pipeline_path = self.models_dir / "feature_pipeline.joblib"
+        # Ensure repo root containing 'ml' is on sys.path
+        ensure_ml_on_sys_path()
 
-        if model_path.exists() and pipeline_path.exists():
-            try:
-                self._model = joblib.load(model_path)
-                self._pipeline = joblib.load(pipeline_path)
-            except Exception as e:
-                print(f"Warning: Failed to load ML components for investigation: {e}")
-                self._model = None
-                self._pipeline = None
+        model_path = models_dir / "lightgbm_model.joblib"
+        pipeline_path = models_dir / "feature_pipeline.joblib"
 
-        self._models_loaded = True
+        if not model_path.exists():
+            raise FileNotFoundError(f"ML model artifact not found at {model_path}")
+        if not pipeline_path.exists():
+            raise FileNotFoundError(f"Feature pipeline artifact not found at {pipeline_path}")
+
+        try:
+            self._model = joblib.load(model_path)
+            self._pipeline = joblib.load(pipeline_path)
+            self._models_loaded = True
+        except Exception as e:
+            logger.error(f"Failed to load ML components for investigation: {e}", exc_info=True)
+            self._model = None
+            self._pipeline = None
+            self._models_loaded = False
+            raise RuntimeError(f"Failed to load ML components for investigation: {e}") from e
 
     def investigate(self, transaction_id: str) -> InvestigationResponse:
         """Execute complete structured risk investigation for a given transaction."""
@@ -196,9 +210,9 @@ class InvestigationService:
             for i, feat_name in enumerate(feature_names):
                 impact = float(contribs[i])
                 val = X_single.iloc[0, i] if hasattr(X_single, "iloc") else X_single[0][i]
-                if isinstance(val, (np.floating, float)):
+                if isinstance(val, np.floating | float):
                     val = round(float(val), 4)
-                elif isinstance(val, (np.integer, int)):
+                elif isinstance(val, np.integer | int):
                     val = int(val)
                 scored_features.append((feat_name, val, impact))
 

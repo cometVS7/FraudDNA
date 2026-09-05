@@ -14,18 +14,22 @@ Financial Model (explicit formulas):
 No new model is trained. The existing Phase 1 LightGBM risk scores are used.
 """
 
+import logging
 from pathlib import Path
 from typing import Any
 
-import joblib  # type: ignore[import-untyped]
+import joblib
 import numpy as np
 import pandas as pd
 
+from app.core.config import ensure_ml_on_sys_path
 from app.simulation.schemas import (
     SimulationConfig,
     SimulationResult,
     generate_simulation_id,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationEngine:
@@ -78,6 +82,14 @@ class SimulationEngine:
 
     def _score_all_transactions(self, df: pd.DataFrame) -> dict[str, float]:
         """Score all transactions with the Phase 1 LightGBM model."""
+        if not self.models_dir.exists():
+            alt_models = Path("..") / self.models_dir
+            if alt_models.exists():
+                self.models_dir = alt_models
+
+        # Ensure repo root containing 'ml' is on sys.path
+        ensure_ml_on_sys_path()
+
         model_file = self.models_dir / "lightgbm_model.joblib"
         pipeline_file = self.models_dir / "feature_pipeline.joblib"
 
@@ -88,14 +100,19 @@ class SimulationEngine:
                 X, _ = pipeline.transform(df, update_state=False)
                 raw_probs = model.predict_proba(X)
                 probs = np.asarray(raw_probs)[:, 1]
-                return {
+                scores = {
                     str(tx_id): round(float(p), 4)
-                    for tx_id, p in zip(df["transaction_id"], probs, strict=False)
+                    for tx_id, p in zip(df["transaction_id"], probs, strict=True)
                 }
+                del X
+                del raw_probs
+                del probs
+                return scores
             except Exception as e:
-                print(f"Warning: Could not score transactions for simulation: {e}")
+                logger.error(f"Could not score transactions for simulation: {e}", exc_info=True)
+                raise RuntimeError(f"Simulation scoring failed: {e}") from e
 
-        return {str(tx_id): 0.0 for tx_id in df["transaction_id"]}
+        raise FileNotFoundError(f"Simulation ML model artifacts not found at {self.models_dir}")
 
     def run_simulation(self, config: SimulationConfig) -> SimulationResult:
         """Execute a deterministic simulation with the given configuration.
