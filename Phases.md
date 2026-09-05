@@ -35,11 +35,15 @@ Do not implement fraud detection yet.
 - cluster API
 - graph-ready frontend data
 
-## Phase 3 — Risk Investigation API
-- transaction risk endpoint
-- cluster endpoint
-- investigation creation/retrieval
-- model + graph + XAI evidence
+## Phase 3 — Risk Investigation API [COMPLETED]
+- transaction risk endpoint (`POST /api/v1/investigations`)
+- deterministic investigation retrieval (`GET /api/v1/investigations/{investigation_id}`)
+- LightGBM native Tree SHAP feature attribution (XAI)
+- FraudDNA graph relationship extraction (direct entities & 2-hop connected transactions)
+- fraud cluster context lookup & integration
+- deterministic, verifiable evidence synthesis across risk model, SHAP, graph, and clusters
+- graceful degradation for missing components / isolated transactions
+- comprehensive automated test suite (35/35 passing)
 
 ## Phase 4 — RAG
 - curated policies/cases
