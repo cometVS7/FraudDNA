@@ -178,10 +178,10 @@ class DataMigrationService:
             probabilities = np.zeros(len(df))
 
         # 7. Detect and persist graph clusters (RiskNetworkModel)
-        tx_to_cluster = self._seed_risk_networks(session, df, probabilities)
-        result.networks_count = len(
-            set(session.execute(select(RiskNetworkModel.id)).scalars().all())
+        tx_to_cluster, suspicious_clusters, new_net_count = self._seed_risk_networks(
+            session, df, probabilities
         )
+        result.networks_count = new_net_count
 
         # 8. Batch Insert Transactions
         result.transactions_count = self._seed_transactions(
@@ -189,6 +189,7 @@ class DataMigrationService:
             df=df,
             probabilities=probabilities,
             tx_to_cluster=tx_to_cluster,
+            suspicious_clusters=suspicious_clusters,
             batch_size=batch_size,
         )
 
@@ -500,7 +501,7 @@ class DataMigrationService:
 
     def _seed_risk_networks(
         self, session: Session, df: pd.DataFrame, probabilities: np.ndarray
-    ) -> dict[str, str]:
+    ) -> tuple[dict[str, str], set[str], int]:
         """Detect graph syndicate clusters and persist RiskNetworkModel records."""
         existing_net_ids = set(session.execute(select(RiskNetworkModel.id)).scalars().all())
         builder = GraphBuilder()
@@ -517,9 +518,12 @@ class DataMigrationService:
 
         tx_to_cluster: dict[str, str] = {}
         new_networks: list[RiskNetworkModel] = []
+        suspicious_clusters: set[str] = set()
 
         for cluster in clusters:
             cid = cluster.cluster_id
+            if cluster.is_suspicious:
+                suspicious_clusters.add(cid)
             for tx_id in cluster.member_transaction_ids:
                 tx_to_cluster[tx_id] = cid
 
@@ -565,7 +569,7 @@ class DataMigrationService:
             session.add_all(new_networks)
             session.flush()
 
-        return tx_to_cluster
+        return tx_to_cluster, suspicious_clusters, len(new_networks)
 
     def _seed_transactions(
         self,
@@ -573,11 +577,13 @@ class DataMigrationService:
         df: pd.DataFrame,
         probabilities: np.ndarray,
         tx_to_cluster: dict[str, str],
+        suspicious_clusters: set[str] | None = None,
         batch_size: int = 5000,
     ) -> int:
         existing_ids = set(session.execute(select(TransactionModel.id)).scalars().all())
         new_tx_objects: list[TransactionModel] = []
         inserted_count = 0
+        suspicious_set = suspicious_clusters or set()
 
         for idx in range(len(df)):
             row = df.iloc[idx]
@@ -610,9 +616,10 @@ class DataMigrationService:
                 tier = "CRITICAL"
 
             network_id = tx_to_cluster.get(tx_id)
+            is_suspicious_cluster = network_id in suspicious_set if network_id else False
 
             # Deterministic initial action alignment
-            if score >= 0.90 or (network_id is not None and score >= 0.70):
+            if score >= 0.90 or (is_suspicious_cluster and score >= 0.70):
                 action = "HOLD"
             elif score >= 0.30:
                 action = "REVIEW"
@@ -654,7 +661,7 @@ class DataMigrationService:
             session.flush()
             inserted_count += len(new_tx_objects)
 
-        return len(existing_ids)
+        return inserted_count
 
     def _seed_risk_assessments(
         self,
@@ -718,7 +725,7 @@ class DataMigrationService:
             session.flush()
             inserted_count += len(new_assessments)
 
-        return len(existing_ras_ids)
+        return inserted_count
 
     def _seed_risk_signals(
         self,
@@ -826,7 +833,7 @@ class DataMigrationService:
             session.flush()
             inserted_count += len(new_signals)
 
-        return len(existing_sig_ids)
+        return inserted_count
 
     def verify_integrity(self, session: Session) -> IntegrityReport:
         """Execute full referential integrity and consistency checks across migrated domain state."""

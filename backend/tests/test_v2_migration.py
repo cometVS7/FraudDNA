@@ -189,6 +189,10 @@ def test_migration_idempotency(migration_session: Session):
     )
 
     # All inserted counts for new records must be zero
+    assert result2.transactions_count == 0
+    assert result2.assessments_count == 0
+    assert result2.signals_count == 0
+    assert result2.networks_count == 0
     assert result2.customers_count == 0
     assert result2.accounts_count == 0
     assert result2.cards_count == 0

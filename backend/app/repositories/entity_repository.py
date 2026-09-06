@@ -547,8 +547,20 @@ class EntityRepository:
                 details={"depth": depth},
             )
 
-        clamped_max_nodes = max(5, min(max_nodes, 250))
-        clamped_max_tx = max(5, min(max_transactions, 250))
+        if max_nodes < 5 or max_nodes > 250:
+            raise ValidationDomainError(
+                f"max_nodes must be between 5 and 250. Requested: {max_nodes}",
+                details={"max_nodes": max_nodes},
+            )
+
+        if max_transactions < 5 or max_transactions > 250:
+            raise ValidationDomainError(
+                f"max_transactions must be between 5 and 250. Requested: {max_transactions}",
+                details={"max_transactions": max_transactions},
+            )
+
+        clamped_max_nodes = max_nodes
+        clamped_max_tx = max_transactions
 
         nodes_map: dict[str, GraphNode] = {}
         edges_map: dict[str, GraphEdge] = {}

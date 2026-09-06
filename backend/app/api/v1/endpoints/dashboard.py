@@ -57,59 +57,54 @@ async def list_transactions(
 ) -> dict[str, Any]:
     """Return paginated transactions with risk data."""
     if settings.ENABLE_PERSISTENT_STORAGE:
-        try:
-            tx_repo = TransactionRepository()
-            risk_tier = risk_level.upper() if risk_level else None
-            min_risk = 0.37 if suspicious_only else None
-            customer_id = search if search and search.startswith("cust_") else None
-            merchant_id = search if search and search.startswith("mer_") else None
+        tx_repo = TransactionRepository()
+        risk_tier = risk_level.upper() if risk_level else None
+        min_risk = 0.37 if suspicious_only else None
+        customer_id = search if search and search.startswith("cust_") else None
+        merchant_id = search if search and search.startswith("mer_") else None
 
-            items, total = tx_repo.list_transactions(
-                session=db,
-                limit=limit,
-                offset=offset,
-                sort_by=sort_by,
-                sort_order=sort_order,
-                risk_tier=risk_tier,
-                min_risk_score=min_risk,
-                customer_id=customer_id,
-                merchant_id=merchant_id,
+        items, total = tx_repo.list_transactions(
+            session=db,
+            limit=limit,
+            offset=offset,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            risk_tier=risk_tier,
+            min_risk_score=min_risk,
+            customer_id=customer_id,
+            merchant_id=merchant_id,
+        )
+
+        results: list[dict[str, Any]] = []
+        for tx in items:
+            ip_addr = (
+                tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
+            )
+            results.append(
+                {
+                    "transaction_id": tx.id,
+                    "amount": float(tx.amount),
+                    "timestamp": tx.timestamp.isoformat()
+                    if hasattr(tx.timestamp, "isoformat")
+                    else str(tx.timestamp),
+                    "customer_id": tx.customer_id,
+                    "merchant_id": tx.merchant_id,
+                    "device_id": tx.device_id or "",
+                    "ip_address": ip_addr,
+                    "card_id": tx.card_id or "",
+                    "risk_score": round(float(tx.risk_score), 4),
+                    "risk_level": tx.risk_tier.lower(),
+                    "is_fraud": tx.is_fraud,
+                    "cluster_id": tx.network_id,
+                }
             )
 
-            results: list[dict[str, Any]] = []
-            for tx in items:
-                ip_addr = (
-                    tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
-                )
-                results.append(
-                    {
-                        "transaction_id": tx.id,
-                        "amount": float(tx.amount),
-                        "timestamp": tx.timestamp.isoformat()
-                        if hasattr(tx.timestamp, "isoformat")
-                        else str(tx.timestamp),
-                        "customer_id": tx.customer_id,
-                        "merchant_id": tx.merchant_id,
-                        "device_id": tx.device_id or "",
-                        "ip_address": ip_addr,
-                        "card_id": tx.card_id or "",
-                        "risk_score": round(float(tx.risk_score), 4),
-                        "risk_level": tx.risk_tier.lower(),
-                        "is_fraud": tx.is_fraud,
-                        "cluster_id": tx.network_id,
-                    }
-                )
-
-            return {
-                "total": total,
-                "limit": limit,
-                "offset": offset,
-                "transactions": results,
-            }
-        except Exception as exc:
-            logger.warning(
-                f"Persistent storage transaction lookup failed, falling back to in-memory: {exc}"
-            )
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "transactions": results,
+        }
 
     graph_service._ensure_initialized()
     transactions = list(graph_service.all_transactions)
@@ -163,33 +158,30 @@ async def get_transaction_detail(
 ) -> dict[str, Any]:
     """Return detailed transaction data."""
     if settings.ENABLE_PERSISTENT_STORAGE:
-        try:
-            tx_repo = TransactionRepository()
-            tx = tx_repo.get_by_id(db, transaction_id)
-            if tx is not None:
-                ip_addr = (
-                    tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
-                )
-                return {
-                    "transaction_id": tx.id,
-                    "amount": float(tx.amount),
-                    "timestamp": tx.timestamp.isoformat()
-                    if hasattr(tx.timestamp, "isoformat")
-                    else str(tx.timestamp),
-                    "customer_id": tx.customer_id,
-                    "merchant_id": tx.merchant_id,
-                    "device_id": tx.device_id or "",
-                    "ip_address": ip_addr,
-                    "card_id": tx.card_id or "",
-                    "risk_score": round(float(tx.risk_score), 4),
-                    "risk_level": tx.risk_tier.lower(),
-                    "is_fraud": tx.is_fraud,
-                    "cluster_id": tx.network_id,
-                }
-        except Exception as exc:
-            logger.warning(
-                f"Persistent storage transaction detail lookup failed, falling back to in-memory: {exc}"
+        tx_repo = TransactionRepository()
+        tx = tx_repo.get_by_id(db, transaction_id)
+        if tx is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Transaction '{transaction_id}' not found.",
             )
+        ip_addr = tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
+        return {
+            "transaction_id": tx.id,
+            "amount": float(tx.amount),
+            "timestamp": tx.timestamp.isoformat()
+            if hasattr(tx.timestamp, "isoformat")
+            else str(tx.timestamp),
+            "customer_id": tx.customer_id,
+            "merchant_id": tx.merchant_id,
+            "device_id": tx.device_id or "",
+            "ip_address": ip_addr,
+            "card_id": tx.card_id or "",
+            "risk_score": round(float(tx.risk_score), 4),
+            "risk_level": tx.risk_tier.lower(),
+            "is_fraud": tx.is_fraud,
+            "cluster_id": tx.network_id,
+        }
 
     row = graph_service.get_transaction_row(transaction_id)
     if row is None:

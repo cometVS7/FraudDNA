@@ -541,14 +541,34 @@ class RiskOrchestrator:
         # ----------------------------------------------------------------------
         # DETERMINISTIC POLICY GUIDANCE
         # ----------------------------------------------------------------------
+        shared_dev_count = (
+            self.entity_repo._get_cross_customer_sharing_count(
+                session, "device", tx.device_id, as_of_time
+            )
+            if tx.device_id
+            else 0
+        )
+        shared_crd_count = (
+            self.entity_repo._get_cross_customer_sharing_count(
+                session, "card", tx.card_id, as_of_time
+            )
+            if tx.card_id
+            else 0
+        )
+        shared_ip_count = (
+            self.entity_repo._get_cross_customer_sharing_count(session, "ip", tx.ip_id, as_of_time)
+            if tx.ip_id
+            else 0
+        )
+
         policy_action, policy_reasons, _ = evaluate_policy_rules(
             risk_score=composite_score,
             is_suspicious_cluster=is_suspicious_net,
             cluster_risk_score=network_score,
             cluster_id=tx.network_id,
-            shared_device_count=cross_sharing if tx.device_id else 0,
-            shared_card_count=cross_sharing if tx.card_id else 0,
-            shared_ip_count=cross_sharing if tx.ip_id else 0,
+            shared_device_count=shared_dev_count,
+            shared_card_count=shared_crd_count,
+            shared_ip_count=shared_ip_count,
             investigation_status="completed" if not is_degraded else "degraded",
         )
 

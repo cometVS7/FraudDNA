@@ -48,43 +48,37 @@ async def list_clusters(
 ) -> ClusterListResponse:
     """Return paginated list of fraud clusters."""
     if settings.ENABLE_PERSISTENT_STORAGE:
-        try:
-            networks, total = network_service.list_networks(
-                session=db,
-                limit=limit,
-                offset=offset,
-                is_suspicious=True if suspicious_only else None,
-                min_risk_score=min_risk if min_risk > 0 else None,
+        networks, total = network_service.list_networks(
+            session=db,
+            limit=limit,
+            offset=offset,
+            is_suspicious=True if suspicious_only else None,
+            min_risk_score=min_risk if min_risk > 0 else None,
+        )
+        summaries = [
+            ClusterSummary(
+                cluster_id=n.id,
+                cluster_risk_score=float(n.risk_score),
+                is_suspicious=n.is_suspicious,
+                transaction_count=n.transaction_count,
+                customer_count=n.customer_count,
+                device_count=n.device_count,
+                ip_count=n.ip_count,
+                card_count=n.card_count,
+                merchant_count=n.merchant_count,
+                suspicious_transaction_count=n.transaction_count if n.is_suspicious else 0,
+                total_transaction_amount=float(n.total_amount),
+                suspicious_transaction_amount=float(n.total_amount) if n.is_suspicious else 0.0,
+                primary_reason=n.primary_reason or "Detected risk network",
             )
-            if total > 0:
-                summaries = [
-                    ClusterSummary(
-                        cluster_id=n.id,
-                        cluster_risk_score=float(n.risk_score),
-                        is_suspicious=n.is_suspicious,
-                        transaction_count=n.transaction_count,
-                        customer_count=n.customer_count,
-                        device_count=n.device_count,
-                        ip_count=n.ip_count,
-                        card_count=n.card_count,
-                        merchant_count=n.merchant_count,
-                        suspicious_transaction_count=n.transaction_count if n.is_suspicious else 0,
-                        total_transaction_amount=float(n.total_amount),
-                        suspicious_transaction_amount=float(n.total_amount)
-                        if n.is_suspicious
-                        else 0.0,
-                        primary_reason=n.primary_reason or "Detected risk network",
-                    )
-                    for n in networks
-                ]
-                return ClusterListResponse(
-                    total_clusters=total,
-                    limit=limit,
-                    offset=offset,
-                    clusters=summaries,
-                )
-        except Exception:
-            pass
+            for n in networks
+        ]
+        return ClusterListResponse(
+            total_clusters=total,
+            limit=limit,
+            offset=offset,
+            clusters=summaries,
+        )
 
     return graph_service.get_clusters(
         min_risk=min_risk,
@@ -111,8 +105,11 @@ async def get_cluster_detail(
     if settings.ENABLE_PERSISTENT_STORAGE:
         try:
             return network_service.get_network_detail(db, cluster_id)
-        except NotFoundDomainError:
-            pass
+        except NotFoundDomainError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Cluster with ID '{cluster_id}' not found.",
+            ) from exc
 
     cluster = graph_service.get_cluster_by_id(cluster_id)
     if not cluster:

@@ -268,21 +268,84 @@ def test_invalid_depth_rejection(db_session: Session):
     entity_service = EntityService()
     cust = db_session.execute(select(CustomerModel).limit(1)).scalar_one()
 
-    with pytest.raises(ValidationDomainError):
-        entity_service.get_entity_neighborhood_graph(
-            session=db_session,
-            entity_type="customer",
-            entity_id=cust.id,
-            depth=3,
-        )
+    # Valid depths
+    g1 = entity_service.get_entity_neighborhood_graph(
+        session=db_session, entity_type="customer", entity_id=cust.id, depth=1
+    )
+    assert g1.total_nodes > 0
+    g2 = entity_service.get_entity_neighborhood_graph(
+        session=db_session, entity_type="customer", entity_id=cust.id, depth=2
+    )
+    assert g2.total_nodes > 0
 
-    with pytest.raises(ValidationDomainError):
-        entity_service.get_entity_neighborhood_graph(
+    # Invalid depths: <= 0 or > 2
+    for invalid_depth in [-1, 0, 3, 100]:
+        with pytest.raises(ValidationDomainError):
+            entity_service.get_entity_neighborhood_graph(
+                session=db_session,
+                entity_type="customer",
+                entity_id=cust.id,
+                depth=invalid_depth,
+            )
+
+
+def test_node_and_transaction_caps_validation(db_session: Session):
+    """Verify server strictly enforces node and transaction caps in [5, 250]."""
+    entity_service = EntityService()
+    net_service = NetworkService()
+    cust = db_session.execute(select(CustomerModel).limit(1)).scalar_one()
+    net = db_session.execute(select(RiskNetworkModel).limit(1)).scalar_one()
+
+    # Valid bounds: 5, 50, 250
+    for valid_cap in [5, 50, 250]:
+        g = entity_service.get_entity_neighborhood_graph(
             session=db_session,
             entity_type="customer",
             entity_id=cust.id,
-            depth=0,
+            max_nodes=valid_cap,
+            max_transactions=valid_cap,
         )
+        assert g.total_nodes <= valid_cap
+
+        ng = net_service.get_network_graph(
+            session=db_session,
+            network_id=net.id,
+            max_nodes=valid_cap,
+            max_transactions=valid_cap,
+        )
+        assert ng.total_nodes <= valid_cap
+
+    # Invalid node caps: < 5 or > 250
+    for invalid_node_cap in [4, 251, 1000]:
+        with pytest.raises(ValidationDomainError):
+            entity_service.get_entity_neighborhood_graph(
+                session=db_session,
+                entity_type="customer",
+                entity_id=cust.id,
+                max_nodes=invalid_node_cap,
+            )
+        with pytest.raises(ValidationDomainError):
+            net_service.get_network_graph(
+                session=db_session,
+                network_id=net.id,
+                max_nodes=invalid_node_cap,
+            )
+
+    # Invalid transaction caps: < 5 or > 250
+    for invalid_tx_cap in [4, 251, 1000]:
+        with pytest.raises(ValidationDomainError):
+            entity_service.get_entity_neighborhood_graph(
+                session=db_session,
+                entity_type="customer",
+                entity_id=cust.id,
+                max_transactions=invalid_tx_cap,
+            )
+        with pytest.raises(ValidationDomainError):
+            net_service.get_network_graph(
+                session=db_session,
+                network_id=net.id,
+                max_transactions=invalid_tx_cap,
+            )
 
 
 # ==============================================================================

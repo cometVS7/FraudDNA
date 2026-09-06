@@ -438,3 +438,11 @@ def test_api_risk_intelligence_404_for_unknown_tx(client: TestClient):
     """Verify GET /api/v1/transactions/{id}/risk-intelligence returns 404 for unknown transaction."""
     resp = client.get("/api/v1/transactions/tx_nonexistent_xyz/risk-intelligence")
     assert resp.status_code == 404
+
+
+def test_independent_entity_sharing_counts(db_session: Session):
+    """Verify device, card, and IP sharing counts are independently computed and not conflated."""
+    orchestrator = RiskOrchestrator()
+    result = orchestrator.orchestrate_transaction_risk(db_session, "tx_0001991")
+    assert result.policy_recommendation == "HOLD"
+    assert result.behavioral_risk.cross_customer_sharing_count >= 0

@@ -171,3 +171,28 @@ async def test_entities_api() -> None:
         # 3. Nonexistent entity -> 404
         res = await client.get("/api/v1/entities/customer/cust_nonexistent")
         assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("api_test_db")
+async def test_dashboard_and_cluster_persistent_mode_no_silent_fallback() -> None:
+    """Verify persistent mode raises 404 on missing records without falling back to CSV."""
+    from app.core.config import settings
+
+    orig_setting = settings.ENABLE_PERSISTENT_STORAGE
+    settings.ENABLE_PERSISTENT_STORAGE = True
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            # 1. Nonexistent transaction -> 404 (does NOT fall back to CSV)
+            res = await client.get("/api/v1/dashboard/transactions/tx_nonexistent_999")
+            assert res.status_code == 404
+
+            # 2. Nonexistent cluster -> 404 (does NOT fall back to CSV)
+            res = await client.get("/api/v1/clusters/cluster_nonexistent_999")
+            assert res.status_code == 404
+
+            # 3. Nonexistent decision -> 404
+            res = await client.get("/api/v1/decisions/tx_nonexistent_999")
+            assert res.status_code == 404
+    finally:
+        settings.ENABLE_PERSISTENT_STORAGE = orig_setting

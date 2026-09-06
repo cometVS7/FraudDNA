@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.errors import ValidationDomainError
 from app.graph.models import EdgeRelation, make_node_id
 from app.models.domain import RiskNetworkModel, TransactionModel
 from app.schemas.graph import GraphData, GraphEdge, GraphNode
@@ -150,8 +151,20 @@ class NetworkRepository:
         max_transactions: int = 100,
     ) -> GraphData:
         """Synthesize a bounded, deterministic GraphData representation for a risk network."""
-        clamped_max_nodes = max(5, min(max_nodes, 250))
-        clamped_max_tx = max(5, min(max_transactions, 250))
+        if max_nodes < 5 or max_nodes > 250:
+            raise ValidationDomainError(
+                f"max_nodes must be between 5 and 250. Requested: {max_nodes}",
+                details={"max_nodes": max_nodes},
+            )
+
+        if max_transactions < 5 or max_transactions > 250:
+            raise ValidationDomainError(
+                f"max_transactions must be between 5 and 250. Requested: {max_transactions}",
+                details={"max_transactions": max_transactions},
+            )
+
+        clamped_max_nodes = max_nodes
+        clamped_max_tx = max_transactions
 
         net = self.get_by_id(session, network_id)
         net_score = float(net.risk_score) if net else 0.0

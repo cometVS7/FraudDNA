@@ -44,8 +44,8 @@ The system is governed by the feature flag `ENABLE_PERSISTENT_STORAGE` in `app.c
   - `POST /api/v1/decisions/evaluate` evaluates deterministic policy rules (`ALLOW / REVIEW / HOLD`) and persists the decision record and cryptographic audit log via `DecisionService.evaluate_and_persist()`.
 
 - **`ENABLE_PERSISTENT_STORAGE=false`** (V1 In-Memory Baseline Mode):
-  - Standard development and testing fallback preserving full compatibility with V1 tests without external database dependencies.
-  - Transparent failover: If persistent storage is enabled but database connections fail, endpoints fall back gracefully to `GraphService`.
+  - Standard development and testing mode preserving full compatibility with V1 tests without external database dependencies, utilizing `GraphService` and CSV.
+  - When `ENABLE_PERSISTENT_STORAGE=true`, PostgreSQL is authoritative and unknown IDs return explicit 404s without silent fallback to stale CSV.
 
 ---
 
