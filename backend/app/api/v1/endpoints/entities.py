@@ -20,7 +20,12 @@ from app.schemas.entity import (
     EntityType,
 )
 from app.schemas.graph import GraphData
+from app.schemas.network_intelligence import EntityNetworkIntelligenceResponse
 from app.services.entity import EntityService, get_entity_service
+from app.services.network_intelligence import (
+    NetworkIntelligenceService,
+    get_network_intelligence_service,
+)
 
 router = APIRouter(prefix="/entities", tags=["Entities"])
 
@@ -120,7 +125,7 @@ def get_entity_relationships(
 def get_entity_graph(
     entity_type: EntityType,
     entity_id: str,
-    depth: Annotated[int, Query(ge=1, le=2, description="Traversal depth (1 or 2)")] = 1,
+    depth: Annotated[int, Query(ge=1, le=3, description="Traversal depth (1 to 3)")] = 1,
     max_nodes: Annotated[int, Query(ge=5, le=250, description="Maximum nodes in graph")] = 100,
     max_transactions: Annotated[
         int, Query(ge=5, le=250, description="Maximum transactions to traverse")
@@ -136,4 +141,29 @@ def get_entity_graph(
         depth=depth,
         max_nodes=max_nodes,
         max_transactions=max_transactions,
+    )
+
+
+@router.get(
+    "/{entity_type}/{entity_id}/network-intelligence",
+    response_model=EntityNetworkIntelligenceResponse,
+    summary="Get Entity Network Intelligence Context",
+    description="Retrieve network-level context for a specific entity including primary network, degree centrality, connected networks, and direct syndicates.",
+)
+def get_entity_network_intelligence(
+    entity_type: EntityType,
+    entity_id: str,
+    as_of: Annotated[
+        datetime | None,
+        Query(description="Point-in-time evaluation timestamp (UTC)"),
+    ] = None,
+    db: Session = Depends(get_sync_db),
+    net_intel_service: NetworkIntelligenceService = Depends(get_network_intelligence_service),
+) -> EntityNetworkIntelligenceResponse:
+    """Retrieve network intelligence context for an entity."""
+    return net_intel_service.get_entity_network_context(
+        session=db,
+        entity_type=entity_type.value,
+        entity_id=entity_id,
+        as_of=as_of,
     )

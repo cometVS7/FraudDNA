@@ -264,22 +264,19 @@ def test_bounded_neighborhood_depth_2_and_shared_collusion(db_session: Session):
 
 
 def test_invalid_depth_rejection(db_session: Session):
-    """Verify server rejects depth > 2 or < 1 with ValidationDomainError."""
+    """Verify server rejects depth > 3 or < 1 with ValidationDomainError."""
     entity_service = EntityService()
     cust = db_session.execute(select(CustomerModel).limit(1)).scalar_one()
 
-    # Valid depths
-    g1 = entity_service.get_entity_neighborhood_graph(
-        session=db_session, entity_type="customer", entity_id=cust.id, depth=1
-    )
-    assert g1.total_nodes > 0
-    g2 = entity_service.get_entity_neighborhood_graph(
-        session=db_session, entity_type="customer", entity_id=cust.id, depth=2
-    )
-    assert g2.total_nodes > 0
+    # Valid depths (1, 2, 3)
+    for valid_depth in [1, 2, 3]:
+        g = entity_service.get_entity_neighborhood_graph(
+            session=db_session, entity_type="customer", entity_id=cust.id, depth=valid_depth
+        )
+        assert g.total_nodes > 0
 
-    # Invalid depths: <= 0 or > 2
-    for invalid_depth in [-1, 0, 3, 100]:
+    # Invalid depths: <= 0 or > 3
+    for invalid_depth in [-1, 0, 4, 100]:
         with pytest.raises(ValidationDomainError):
             entity_service.get_entity_neighborhood_graph(
                 session=db_session,

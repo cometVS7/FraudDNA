@@ -13,6 +13,10 @@ from app.services.intelligence import IntelligenceService, get_intelligence_serv
 from app.services.investigation import InvestigationService, get_investigation_service
 from app.services.model import ModelService, get_model_service
 from app.services.network import NetworkService, get_network_service
+from app.services.network_intelligence import (
+    NetworkIntelligenceService,
+    get_network_intelligence_service,
+)
 from app.services.risk import RiskService, get_risk_service
 from app.services.risk_orchestrator import RiskOrchestrator, get_risk_orchestrator
 from app.services.seed import DatabaseSeeder
@@ -37,6 +41,8 @@ __all__ = [
     "get_model_service",
     "NetworkService",
     "get_network_service",
+    "NetworkIntelligenceService",
+    "get_network_intelligence_service",
     "RiskService",
     "get_risk_service",
     "RiskOrchestrator",

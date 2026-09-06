@@ -541,9 +541,9 @@ class EntityRepository:
         max_transactions: int = 100,
     ) -> GraphData:
         """Construct a bounded, deterministic GraphData representation directly from PostgreSQL."""
-        if depth < 1 or depth > 2:
+        if depth < 1 or depth > 3:
             raise ValidationDomainError(
-                f"Neighborhood traversal depth must be 1 or 2. Requested: {depth}",
+                f"Neighborhood traversal depth must be between 1 and 3. Requested: {depth}",
                 details={"depth": depth},
             )
 
