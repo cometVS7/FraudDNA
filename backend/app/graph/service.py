@@ -10,7 +10,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from app.core.config import ensure_ml_on_sys_path
+from app.core.config import ensure_ml_on_sys_path, settings
+from app.core.database import get_sync_session_factory
 from app.graph.builder import GraphBuilder
 from app.graph.cluster import ClusterDetector
 from app.graph.models import EntityType, make_node_id
@@ -319,6 +320,17 @@ class GraphService:
 
     def get_cluster_by_id(self, cluster_id: str) -> ClusterDetail | None:
         """Retrieve full details and subgraph for a specific cluster."""
+        if settings.ENABLE_PERSISTENT_STORAGE:
+            try:
+                from app.services.network import NetworkService
+
+                session_factory = get_sync_session_factory()
+                with session_factory() as session:
+                    net_service = NetworkService()
+                    return net_service.get_network_detail(session, cluster_id)
+            except Exception as e:
+                logger.debug(f"Persistent cluster lookup fallback: {e}")
+
         self._ensure_initialized()
         return self.clusters_by_id.get(cluster_id)
 
@@ -328,6 +340,29 @@ class GraphService:
         depth: int = 2,
     ) -> GraphData:
         """Extract ego-subgraph surrounding a given transaction."""
+        if settings.ENABLE_PERSISTENT_STORAGE:
+            try:
+                from app.repositories.entity_repository import EntityRepository
+
+                session_factory = get_sync_session_factory()
+                with session_factory() as session:
+                    repo = EntityRepository()
+                    txs, count = repo.get_entity_transactions(
+                        session=session,
+                        entity_type="transaction",
+                        entity_id=transaction_id,
+                        limit=1,
+                    )
+                    if count > 0 and len(txs) > 0:
+                        return repo.get_bounded_neighborhood(
+                            session=session,
+                            entity_type="transaction",
+                            entity_id=transaction_id,
+                            depth=min(depth, 2),
+                        )
+            except Exception as e:
+                logger.debug(f"Persistent transaction neighborhood fallback: {e}")
+
         self._ensure_initialized()
         tx_node = make_node_id(EntityType.TRANSACTION, transaction_id)
         if tx_node not in self.graph:
@@ -344,7 +379,27 @@ class GraphService:
         depth: int = 2,
     ) -> GraphData:
         """Extract ego-subgraph surrounding an entity node."""
+        etype_str = (
+            entity_type.value if isinstance(entity_type, EntityType) else str(entity_type).lower()
+        )
+        if settings.ENABLE_PERSISTENT_STORAGE:
+            try:
+                from app.repositories.entity_repository import EntityRepository
+
+                session_factory = get_sync_session_factory()
+                with session_factory() as session:
+                    repo = EntityRepository()
+                    return repo.get_bounded_neighborhood(
+                        session=session,
+                        entity_type=etype_str,
+                        entity_id=raw_id,
+                        depth=min(depth, 2),
+                    )
+            except Exception as e:
+                logger.debug(f"Persistent entity neighborhood fallback: {e}")
+
         self._ensure_initialized()
+
         node_id = make_node_id(entity_type, raw_id)
         if node_id not in self.graph:
             return GraphData()

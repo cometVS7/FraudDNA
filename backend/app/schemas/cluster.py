@@ -78,3 +78,25 @@ class ClusterListResponse(BaseModel):
     clusters: list[ClusterSummary] = Field(
         default_factory=list, description="List of cluster summaries"
     )
+
+
+class NetworkMembersResponse(BaseModel):
+    """Member entities involved in a risk network / cluster."""
+
+    network_id: str = Field(..., description="Risk network / cluster ID")
+    total_members: int = Field(default=0, description="Total distinct member entities")
+    customer_ids: list[str] = Field(default_factory=list)
+    device_ids: list[str] = Field(default_factory=list)
+    ip_addresses: list[str] = Field(default_factory=list)
+    card_ids: list[str] = Field(default_factory=list)
+    merchant_ids: list[str] = Field(default_factory=list)
+
+
+class NetworkTransactionsResponse(BaseModel):
+    """Paginated transactions associated with a risk network / cluster."""
+
+    network_id: str = Field(..., description="Risk network / cluster ID")
+    total_transactions: int = Field(..., description="Total transactions in network")
+    limit: int = Field(default=50, description="Page limit")
+    offset: int = Field(default=0, description="Page offset")
+    transactions: list[dict[str, Any]] = Field(default_factory=list)

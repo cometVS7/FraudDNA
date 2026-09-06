@@ -1,14 +1,16 @@
-"""FraudDNA Deterministic Policy Engine API Endpoints.
-
-Exposes REST endpoints to evaluate transactions against deterministic rule matrices
-and retrieve final ALLOW / REVIEW / HOLD financial decisions.
-"""
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.database import get_sync_db
 from app.policy.models import PolicyDecision, PolicyEvaluationRequest
 from app.policy.service import PolicyService, get_policy_service
+from app.services.decision import DecisionService, get_decision_service
 from app.services.investigation import TransactionNotFoundError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/decisions", tags=["decisions"])
 
@@ -26,9 +28,23 @@ router = APIRouter(prefix="/decisions", tags=["decisions"])
 def evaluate_transaction_policy(
     payload: PolicyEvaluationRequest,
     service: PolicyService = Depends(get_policy_service),
+    decision_service: DecisionService = Depends(get_decision_service),
+    db: Session = Depends(get_sync_db),
 ) -> PolicyDecision:
     """Evaluate deterministic policy for a transaction."""
     try:
+        if settings.ENABLE_PERSISTENT_STORAGE:
+            try:
+                return decision_service.evaluate_and_persist(
+                    session=db,
+                    transaction_id=payload.transaction_id,
+                    risk_score_override=payload.risk_score_override,
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"Decision persistence failed, falling back to in-memory evaluation: {exc}"
+                )
+
         return service.evaluate(
             transaction_id=payload.transaction_id,
             risk_score_override=payload.risk_score_override,
@@ -55,20 +71,42 @@ def evaluate_transaction_policy(
 def get_transaction_decision(
     transaction_id: str,
     service: PolicyService = Depends(get_policy_service),
+    decision_service: DecisionService = Depends(get_decision_service),
+    db: Session = Depends(get_sync_db),
 ) -> PolicyDecision:
     """Retrieve an existing decision or compute if not cached."""
-    decision = service.get_decision_by_transaction_id(transaction_id)
-    if decision is None:
-        try:
+    try:
+        if settings.ENABLE_PERSISTENT_STORAGE:
+            rec = decision_service.decision_repo.get_by_transaction_id(db, transaction_id)
+            if rec:
+                from app.policy.models import PolicyAction, PolicyReasonCode
+
+                return PolicyDecision(
+                    decision_id=rec.id,
+                    transaction_id=rec.transaction_id,
+                    action=PolicyAction(rec.action),
+                    reason_codes=[PolicyReasonCode(rc) for rc in rec.reason_codes],
+                    risk_score=float(rec.transaction.risk_score) if rec.transaction else 0.0,
+                    risk_level=rec.transaction.risk_tier.lower() if rec.transaction else "low",
+                    cluster_id=rec.transaction.network_id if rec.transaction else None,
+                    policy_version=rec.policy_version,
+                    evidence_summary=rec.evidence_summary or [],
+                    created_at=rec.generated_at,
+                    is_deterministic=rec.is_deterministic,
+                )
+            return decision_service.evaluate_and_persist(session=db, transaction_id=transaction_id)
+
+        decision = service.get_decision_by_transaction_id(transaction_id)
+        if decision is None:
             return service.evaluate(transaction_id=transaction_id)
-        except TransactionNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Transaction '{exc.transaction_id}' not found.",
-            ) from exc
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Policy evaluation failed: {str(exc)}",
-            ) from exc
-    return decision
+        return decision
+    except TransactionNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Transaction '{exc.transaction_id}' not found.",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Policy evaluation failed: {str(exc)}",
+        ) from exc

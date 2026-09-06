@@ -14,10 +14,13 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
+from sqlalchemy.orm import Session
 
 from app.core.config import ensure_ml_on_sys_path
 from app.graph.models import EntityType, make_node_id, parse_node_id
 from app.graph.service import GraphService, get_graph_service
+from app.models.domain import EvidenceModel, InvestigationModel
+from app.repositories.investigation_repository import InvestigationRepository
 from app.schemas.investigation import (
     ClusterInvestigationSummary,
     EvidenceSeverity,
@@ -50,9 +53,11 @@ class InvestigationService:
         self,
         graph_service: GraphService | None = None,
         models_dir: str | Path = "ml/models",
+        investigation_repo: InvestigationRepository | None = None,
     ) -> None:
         self.graph_service = graph_service or get_graph_service()
         self.models_dir = Path(models_dir)
+        self.investigation_repo = investigation_repo or InvestigationRepository()
 
         self._model: Any | None = None
         self._pipeline: Any | None = None
@@ -508,6 +513,78 @@ class InvestigationService:
             )
 
         return evidence
+
+    def persist_investigation(
+        self,
+        session: Session,
+        investigation: InvestigationResponse,
+        case_id: str | None = None,
+    ) -> InvestigationModel:
+        """Persist an investigation result into persistent relational storage."""
+        inv_id = f"inv_{investigation.investigation_id}"
+
+        # Check if already persisted
+        existing = self.investigation_repo.get_by_id(session, inv_id)
+        if existing:
+            return existing
+
+        now = datetime.utcnow()
+        inv_model = InvestigationModel(
+            id=inv_id,
+            status=investigation.status.value.upper(),
+            priority=(
+                "HIGH"
+                if investigation.risk_score >= 0.70
+                else ("MEDIUM" if investigation.risk_score >= 0.37 else "LOW")
+            ),
+            trigger_type="TRANSACTION_RISK",
+            primary_transaction_id=investigation.transaction_id,
+            primary_network_id=investigation.cluster.cluster_id if investigation.cluster else None,
+            case_id=case_id,
+            risk_score=investigation.risk_score,
+            risk_level=investigation.risk_level.value.upper(),
+            created_at=now,
+            updated_at=now,
+        )
+        self.investigation_repo.create(session, inv_model)
+
+        for ev in investigation.evidence:
+            ev_hash = hashlib.sha256(
+                f"{inv_id}:{ev.evidence_type}:{ev.description}".encode()
+            ).hexdigest()[:16]
+            ev_id = f"ev_{ev_hash}"
+            ev_model = EvidenceModel(
+                id=ev_id,
+                investigation_id=inv_id,
+                case_id=case_id,
+                evidence_type=ev.evidence_type,
+                source=ev.source.value,
+                source_id=investigation.cluster.cluster_id if investigation.cluster else None,
+                description=ev.description,
+                severity=ev.severity.value.upper(),
+                confidence=1.0,
+                timestamp=now,
+            )
+            session.add(ev_model)
+        session.flush()
+        return inv_model
+
+    def get_persisted_investigation(
+        self, session: Session, investigation_id: str
+    ) -> InvestigationModel | None:
+        """Retrieve persisted investigation from relational storage."""
+        return self.investigation_repo.get_by_id(session, investigation_id)
+
+    def investigate_and_persist(
+        self,
+        session: Session,
+        transaction_id: str,
+        case_id: str | None = None,
+    ) -> InvestigationResponse:
+        """Run ML/Graph investigation pipeline and persist the result."""
+        result = self.investigate(transaction_id=transaction_id)
+        self.persist_investigation(session=session, investigation=result, case_id=case_id)
+        return result
 
 
 # Global Singleton Instance
