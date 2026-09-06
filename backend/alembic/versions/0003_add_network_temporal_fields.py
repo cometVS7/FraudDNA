@@ -9,7 +9,6 @@ Create Date: 2026-09-06 22:00:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-
 from alembic import op
 
 revision: str = "0003_network_temporal_fields"

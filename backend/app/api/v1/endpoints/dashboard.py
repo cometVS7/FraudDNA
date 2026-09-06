@@ -19,6 +19,8 @@ from app.core.config import settings
 from app.core.database import get_sync_db
 from app.graph.service import GraphService, get_graph_service
 from app.repositories.transaction_repository import TransactionRepository
+from app.schemas.risk import RiskIntelligenceResponse
+from app.services.risk_orchestrator import RiskOrchestrator, get_risk_orchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +228,28 @@ async def get_transaction_detail(
         "is_fraud": bool(row.get("is_fraud", 0)),
         "cluster_id": cluster_id,
     }
+
+
+@router.get(
+    "/transactions/{transaction_id}/risk-intelligence",
+    response_model=RiskIntelligenceResponse,
+    summary="Get Multi-Layer Risk Intelligence",
+    description="Retrieve comprehensive 4-layer risk intelligence (Transaction, Entity, Network, Behavioral), composite risk, confidence, and structured explanations.",
+)
+async def get_transaction_risk_intelligence(
+    transaction_id: str,
+    persist: Annotated[
+        bool, Query(description="Whether to persist composite risk updates")
+    ] = False,
+    db: Session = Depends(get_sync_db),
+    risk_orchestrator: RiskOrchestrator = Depends(get_risk_orchestrator),
+) -> RiskIntelligenceResponse:
+    """Return synthesized multi-layer risk intelligence."""
+    return risk_orchestrator.orchestrate_transaction_risk(
+        session=db,
+        transaction_id=transaction_id,
+        persist_assessment=persist,
+    )
 
 
 @router.get(

@@ -336,6 +336,16 @@ class RiskAssessmentModel(Base):
     risk_score: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     risk_tier: Mapped[str] = mapped_column(String(32), nullable=False)
     feature_version: Mapped[str] = mapped_column(String(32), default="v1.0")
+    composite_risk_score: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
+    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entity_risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    network_risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    behavioral_risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    orchestration_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    contribution_breakdown: Mapped[list[dict[str, Any]] | dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True
+    )
+    explanation_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     generated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, index=True
     )
@@ -344,9 +354,14 @@ class RiskAssessmentModel(Base):
     transaction: Mapped["TransactionModel"] = relationship(
         "TransactionModel", back_populates="risk_assessments"
     )
-    signals: Mapped[list["RiskSignalModel"]] = relationship(
+    risk_signals: Mapped[list["RiskSignalModel"]] = relationship(
         "RiskSignalModel", back_populates="assessment", cascade="all, delete-orphan"
     )
+
+    @property
+    def signals(self) -> list["RiskSignalModel"]:
+        """Compatibility property for signals."""
+        return self.risk_signals
 
 
 class RiskSignalModel(Base):
@@ -361,6 +376,7 @@ class RiskSignalModel(Base):
         nullable=False,
         index=True,
     )
+    category: Mapped[str] = mapped_column(String(32), default="TRANSACTION_SIGNAL", index=True)
     feature_name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     feature_value: Mapped[float] = mapped_column(Float, nullable=False)
     impact: Mapped[float] = mapped_column(Float, nullable=False)
@@ -369,7 +385,7 @@ class RiskSignalModel(Base):
 
     # Relationships
     assessment: Mapped["RiskAssessmentModel"] = relationship(
-        "RiskAssessmentModel", back_populates="signals"
+        "RiskAssessmentModel", back_populates="risk_signals"
     )
 
 

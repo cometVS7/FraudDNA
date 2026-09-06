@@ -220,50 +220,24 @@ Create database-backed entity intelligence and bounded graph exploration:
 Documentation:
 See docs/V2_ENTITY_GRAPH_INTELLIGENCE.md for detailed architecture and empirical benchmarks.
 
-7. Phase V2-06 — Advanced Risk Intelligence
+7. Phase V2-06 — Advanced Risk Intelligence & Risk Orchestration [COMPLETED]
 
 Objectives:
 
-Evolve the V1 risk system into a layered risk intelligence engine.
+Evolve the V1 risk system into a multi-layer risk intelligence engine:
+- Four independently inspectable risk layers: Transaction Risk (LightGBM ML + Tree SHAP), Entity Risk (deterministic profile aggregation), Network Risk (RiskNetwork syndicate cluster intelligence), and Behavioral Risk (point-in-time velocity acceleration).
+- Deterministic RiskOrchestrator calculating composite risk with server-controlled weights (w_tx=0.45, w_ent=0.20, w_net=0.20, w_beh=0.15) and coordinated ring escalation invariant.
+- Confidence and evidence completeness evaluation distinguishing low risk from missing evidence.
+- Decomposable layer contribution breakdown and structured multi-layer natural language explainability.
+- Unified risk signal taxonomy: TRANSACTION_SIGNAL, ENTITY_SIGNAL, NETWORK_SIGNAL, BEHAVIOR_SIGNAL.
+- Authoritative policy engine boundary: PolicyEngine evaluates composite signals to return ALLOW / REVIEW / HOLD without AI/LLM controlling financial actions.
+- Alembic migration 0004_risk_orchestration_fields extending RiskAssessmentModel and RiskSignalModel.
+- Typed API endpoint: GET /api/v1/transactions/{id}/risk-intelligence.
+- Zero full-dataset or graph memory reload; 209/209 backend tests passing (100%), full type-safety and frontend build clean.
 
-Risk layers:
+Documentation:
+See docs/V2_ADVANCED_RISK_INTELLIGENCE.md for complete architecture, formulas, and empirical verification.
 
-Transaction Risk
-       +
-Behavioral Risk
-       +
-Graph Risk
-       +
-Network Risk
-       ↓
-Risk Intelligence
-
-Capabilities:
-
-model prediction
-behavioral anomaly detection
-network risk
-graph-derived signals
-risk aggregation
-confidence
-signal attribution
-historical risk
-
-Every risk assessment must preserve:
-
-model version
-feature version
-timestamp
-input context
-score
-risk tier
-
-Exit criteria:
-
-risk calculations reproducible
-no hardcoded analytical results
-model lineage visible
-explanations traceable
 8. Phase V2-07 — Risk Network Intelligence
 
 Objectives:

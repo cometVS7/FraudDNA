@@ -14,6 +14,7 @@ from app.services.investigation import InvestigationService, get_investigation_s
 from app.services.model import ModelService, get_model_service
 from app.services.network import NetworkService, get_network_service
 from app.services.risk import RiskService, get_risk_service
+from app.services.risk_orchestrator import RiskOrchestrator, get_risk_orchestrator
 from app.services.seed import DatabaseSeeder
 from app.services.transaction_service import TransactionService, get_transaction_service
 
@@ -38,6 +39,8 @@ __all__ = [
     "get_network_service",
     "RiskService",
     "get_risk_service",
+    "RiskOrchestrator",
+    "get_risk_orchestrator",
     "TransactionService",
     "get_transaction_service",
     "DatabaseSeeder",
