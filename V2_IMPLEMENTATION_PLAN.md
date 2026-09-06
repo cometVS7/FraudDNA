@@ -204,40 +204,22 @@ vectorized LightGBM scoring (< 1s for 25k transactions)
 
 Documentation:
 See docs/V2_DATA_MIGRATION_PERSISTENCE.md for complete architecture and migration procedures.
-6. Phase V2-05 — Entity Intelligence
+6. Phase V2-05 — Entity Intelligence & Advanced Graph Integration [COMPLETED]
 
 Objectives:
 
-Create entity-centric intelligence.
+Create database-backed entity intelligence and bounded graph exploration:
+- Database-backed entity intelligence profiles for Customer, Account, Card, Device, IP, and Merchant
+- Transparent deterministic entity risk aggregation formula: min(1.0, 0.40*R_max + 0.20*R_avg3 + 0.25*N_susp + 0.15*C_sharing)
+- Point-in-time behavioral velocity metrics (5m, 1h, 24h windows, as_of timestamp, zero future leakage)
+- Bounded database-backed graph neighborhood exploration (depth in {1,2}, max_nodes <= 250, deterministic React Flow contract)
+- Rich relationship semantics (OWNS, EXECUTED, ON_DEVICE, FROM_IP, USING_CARD, AT_MERCHANT, SHARES_DEVICE, MEMBER_OF_NETWORK)
+- Upgraded NetworkService with member entity grouping, bounded member transactions, and subgraph extraction
+- Full regression stability for known fraud transaction tx_0001991 (score >= 0.90, CRITICAL, HOLD)
 
-Entity types:
+Documentation:
+See docs/V2_ENTITY_GRAPH_INTELLIGENCE.md for detailed architecture and empirical benchmarks.
 
-Customer
-Account
-Card
-Device
-IP
-Merchant
-
-Capabilities:
-
-entity search
-entity profile
-behavioral statistics
-risk history
-transaction history
-velocity analysis
-relationship discovery
-anomaly history
-investigation history
-case history
-
-Exit criteria:
-
-entity pages are backed by real data
-statistics are dynamically calculated
-point-in-time correctness preserved
-relationships traceable to source records
 7. Phase V2-06 — Advanced Risk Intelligence
 
 Objectives:

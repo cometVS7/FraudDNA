@@ -527,6 +527,19 @@ class DataMigrationService:
                 continue
             existing_net_ids.add(cid)
 
+            # Extract temporal boundaries from member transactions
+            member_txs = df[df["transaction_id"].isin(cluster.member_transaction_ids)]
+            if not member_txs.empty and "timestamp" in member_txs:
+                first_seen_ts = pd.to_datetime(member_txs["timestamp"].min()).to_pydatetime()
+                last_seen_ts = pd.to_datetime(member_txs["timestamp"].max()).to_pydatetime()
+                if first_seen_ts.tzinfo is None:
+                    first_seen_ts = first_seen_ts.replace(tzinfo=UTC)
+                if last_seen_ts.tzinfo is None:
+                    last_seen_ts = last_seen_ts.replace(tzinfo=UTC)
+            else:
+                first_seen_ts = datetime.now(UTC)
+                last_seen_ts = datetime.now(UTC)
+
             new_networks.append(
                 RiskNetworkModel(
                     id=cid,
@@ -542,6 +555,8 @@ class DataMigrationService:
                     ip_count=cluster.ip_count,
                     merchant_count=cluster.merchant_count,
                     total_amount=Decimal(str(round(float(cluster.total_transaction_amount), 2))),
+                    first_seen=first_seen_ts,
+                    last_seen=last_seen_ts,
                     created_at=datetime.now(UTC),
                 )
             )
