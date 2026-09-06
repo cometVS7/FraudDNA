@@ -8,12 +8,19 @@ GET /api/v1/audit            - Audit trail of investigations/decisions
 """
 
 import json
+import logging
 from pathlib import Path
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.database import get_sync_db
 from app.graph.service import GraphService, get_graph_service
+from app.repositories.transaction_repository import TransactionRepository
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Dashboard"])
 
@@ -44,8 +51,64 @@ async def list_transactions(
     suspicious_only: Annotated[bool, Query()] = False,
     search: Annotated[str | None, Query()] = None,
     graph_service: GraphService = Depends(get_graph_service),
+    db: Session = Depends(get_sync_db),
 ) -> dict[str, Any]:
     """Return paginated transactions with risk data."""
+    if settings.ENABLE_PERSISTENT_STORAGE:
+        try:
+            tx_repo = TransactionRepository()
+            risk_tier = risk_level.upper() if risk_level else None
+            min_risk = 0.37 if suspicious_only else None
+            customer_id = search if search and search.startswith("cust_") else None
+            merchant_id = search if search and search.startswith("mer_") else None
+
+            items, total = tx_repo.list_transactions(
+                session=db,
+                limit=limit,
+                offset=offset,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                risk_tier=risk_tier,
+                min_risk_score=min_risk,
+                customer_id=customer_id,
+                merchant_id=merchant_id,
+            )
+
+            results: list[dict[str, Any]] = []
+            for tx in items:
+                ip_addr = (
+                    tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
+                )
+                results.append(
+                    {
+                        "transaction_id": tx.id,
+                        "amount": float(tx.amount),
+                        "timestamp": tx.timestamp.isoformat()
+                        if hasattr(tx.timestamp, "isoformat")
+                        else str(tx.timestamp),
+                        "customer_id": tx.customer_id,
+                        "merchant_id": tx.merchant_id,
+                        "device_id": tx.device_id or "",
+                        "ip_address": ip_addr,
+                        "card_id": tx.card_id or "",
+                        "risk_score": round(float(tx.risk_score), 4),
+                        "risk_level": tx.risk_tier.lower(),
+                        "is_fraud": tx.is_fraud,
+                        "cluster_id": tx.network_id,
+                    }
+                )
+
+            return {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "transactions": results,
+            }
+        except Exception as exc:
+            logger.warning(
+                f"Persistent storage transaction lookup failed, falling back to in-memory: {exc}"
+            )
+
     graph_service._ensure_initialized()
     transactions = list(graph_service.all_transactions)
 
@@ -94,8 +157,38 @@ async def list_transactions(
 async def get_transaction_detail(
     transaction_id: str,
     graph_service: GraphService = Depends(get_graph_service),
+    db: Session = Depends(get_sync_db),
 ) -> dict[str, Any]:
     """Return detailed transaction data."""
+    if settings.ENABLE_PERSISTENT_STORAGE:
+        try:
+            tx_repo = TransactionRepository()
+            tx = tx_repo.get_by_id(db, transaction_id)
+            if tx is not None:
+                ip_addr = (
+                    tx.ip.ip_address if tx.ip else (tx.ip_id.replace("ip_", "") if tx.ip_id else "")
+                )
+                return {
+                    "transaction_id": tx.id,
+                    "amount": float(tx.amount),
+                    "timestamp": tx.timestamp.isoformat()
+                    if hasattr(tx.timestamp, "isoformat")
+                    else str(tx.timestamp),
+                    "customer_id": tx.customer_id,
+                    "merchant_id": tx.merchant_id,
+                    "device_id": tx.device_id or "",
+                    "ip_address": ip_addr,
+                    "card_id": tx.card_id or "",
+                    "risk_score": round(float(tx.risk_score), 4),
+                    "risk_level": tx.risk_tier.lower(),
+                    "is_fraud": tx.is_fraud,
+                    "cluster_id": tx.network_id,
+                }
+        except Exception as exc:
+            logger.warning(
+                f"Persistent storage transaction detail lookup failed, falling back to in-memory: {exc}"
+            )
+
     row = graph_service.get_transaction_row(transaction_id)
     if row is None:
         raise HTTPException(

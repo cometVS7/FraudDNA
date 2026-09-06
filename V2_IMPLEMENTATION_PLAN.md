@@ -168,40 +168,30 @@ service boundaries documented
 unit tests exist
 API handlers remain small
 domain logic independently testable
-5. Phase V2-04 — Transaction Intelligence
+5. Phase V2-04 — Data Migration, Intelligence Persistence & Transaction Intelligence [COMPLETED]
 
 Objectives:
 
-Expand V1 transaction intelligence into a production-grade transaction domain.
+Transition PostgreSQL to the authoritative V2 data path while preserving V1 intelligence behavior:
+- Deterministic and idempotent data migration service (25,000 transactions, all core entities)
+- Model registry, policy matrix, and intelligence knowledge persistence
+- Graph syndicate cluster discovery and RiskNetworkModel persistence
+- Native LightGBM vectorized risk scoring and point-in-time RiskAssessment persistence
+- Native LightGBM Tree SHAP feature attributions and structured RiskSignal persistence (bounded Top-5 policy)
+- Full relational investigation and decision lineage tracing
+- Dual-mode feature flag execution (ENABLE_PERSISTENT_STORAGE) with transparent in-memory fallback
+- Complete referential integrity verification engine and CLI (scripts/migrate_v1_to_v2.py)
 
-Capabilities:
+Capabilities Established:
 
 transaction search
-pagination
-filtering
-sorting
-risk filtering
-decision filtering
-customer filtering
-merchant filtering
-device filtering
-IP filtering
-card filtering
-time filtering
-amount filtering
-
-Transaction detail:
-
-transaction context
-risk assessment
-risk signals
-SHAP
-behavioral context
-network context
-related entities
-investigation
-decision
-audit
+pagination (bounded 1-200)
+filtering (risk, decision, customer, merchant, device, IP, card, time, amount)
+sorting (indexed timestamp, risk_score, amount)
+risk assessment point-in-time persistence
+Tree SHAP risk signals attribution persistence
+network syndicate context linkage
+full investigation -> evidence -> decision -> audit lineage
 
 Performance requirements:
 
@@ -209,13 +199,11 @@ indexed queries
 bounded result sets
 no unbounded database scans
 predictable pagination
+batch chunked ingestion (5,000 items)
+vectorized LightGBM scoring (< 1s for 25k transactions)
 
-Exit criteria:
-
-large transaction datasets remain responsive
-filters are deterministic
-pagination is stable
-API contracts tested
+Documentation:
+See docs/V2_DATA_MIGRATION_PERSISTENCE.md for complete architecture and migration procedures.
 6. Phase V2-05 — Entity Intelligence
 
 Objectives:

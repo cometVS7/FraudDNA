@@ -5,11 +5,11 @@ Encapsulates persistent access and analysis of RiskNetworkModel and fraud syndic
 
 import logging
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import NotFoundDomainError
 from app.models.domain import RiskNetworkModel
+from app.repositories.network_repository import NetworkRepository
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +17,14 @@ logger = logging.getLogger(__name__)
 class NetworkService:
     """Coordinates risk network and fraud syndicate cluster persistence and lookups."""
 
-    def get_network(self, session: Session, network_id: str) -> RiskNetworkModel:
+    def __init__(self, repo: NetworkRepository | None = None) -> None:
+        self.repo = repo or NetworkRepository()
+
+    def get_network(
+        self, session: Session, network_id: str, load_transactions: bool = False
+    ) -> RiskNetworkModel:
         """Retrieve risk network by cluster/network ID."""
-        stmt = select(RiskNetworkModel).where(RiskNetworkModel.id == network_id)
-        network = session.execute(stmt).scalar_one_or_none()
+        network = self.repo.get_by_id(session, network_id, load_transactions=load_transactions)
         if not network:
             raise NotFoundDomainError(
                 f"Risk network '{network_id}' not found.",
@@ -33,15 +37,17 @@ class NetworkService:
         session: Session,
         limit: int = 50,
         offset: int = 0,
-        risk_level: str | None = None,
+        is_suspicious: bool | None = None,
+        min_risk_score: float | None = None,
     ) -> tuple[list[RiskNetworkModel], int]:
         """Query bounded risk networks."""
-        stmt = select(RiskNetworkModel)
-        if risk_level:
-            stmt = stmt.where(RiskNetworkModel.risk_level == risk_level)
-        stmt = stmt.limit(limit).offset(offset)
-        items = list(session.execute(stmt).scalars().all())
-        return items, len(items)
+        return self.repo.list_networks(
+            session=session,
+            limit=limit,
+            offset=offset,
+            is_suspicious=is_suspicious,
+            min_risk_score=min_risk_score,
+        )
 
 
 _network_service_instance: NetworkService | None = None

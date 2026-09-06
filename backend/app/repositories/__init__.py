@@ -9,6 +9,7 @@ from app.repositories.decision_repository import DecisionRepository
 from app.repositories.entity_repository import EntityRepository
 from app.repositories.investigation_repository import InvestigationRepository
 from app.repositories.model_repository import ModelRegistryRepository
+from app.repositories.network_repository import NetworkRepository
 from app.repositories.transaction_repository import TransactionRepository
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "EntityRepository",
     "InvestigationRepository",
     "ModelRegistryRepository",
+    "NetworkRepository",
     "TransactionRepository",
 ]

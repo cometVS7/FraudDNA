@@ -5,17 +5,20 @@ and audit record creation. Preserves the authoritative ALLOW / REVIEW / HOLD voc
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.errors import NotFoundDomainError
 from app.models.domain import DecisionModel
-from app.policy.engine import PolicyEngine
 from app.policy.models import PolicyDecision
 from app.repositories.decision_repository import DecisionRepository
 from app.schemas.decision import DecisionListResponse, DecisionRecordResponse
 from app.services.audit import AuditService, get_audit_service
+
+if TYPE_CHECKING:
+    from app.policy.engine import PolicyEngine
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +28,16 @@ class DecisionService:
 
     def __init__(
         self,
-        policy_engine: PolicyEngine | None = None,
+        policy_engine: "PolicyEngine | None" = None,
         decision_repo: DecisionRepository | None = None,
         audit_service: AuditService | None = None,
     ) -> None:
-        self.policy_engine = policy_engine or PolicyEngine()
+        if policy_engine is None:
+            from app.policy.engine import PolicyEngine
+
+            self.policy_engine = PolicyEngine()
+        else:
+            self.policy_engine = policy_engine
         self.decision_repo = decision_repo or DecisionRepository()
         self.audit_service = audit_service or get_audit_service()
 

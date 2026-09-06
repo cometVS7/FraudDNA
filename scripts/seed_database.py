@@ -16,11 +16,10 @@ BACKEND_DIR = REPO_ROOT / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from sqlalchemy import create_engine  # noqa: E402
-from sqlalchemy.orm import sessionmaker  # noqa: E402
-
-from app.core.config import settings  # noqa: E402
-from app.services.seed import DatabaseSeeder  # noqa: E402
+from app.core.config import settings
+from app.services.seed import DatabaseSeeder
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def main() -> None:
