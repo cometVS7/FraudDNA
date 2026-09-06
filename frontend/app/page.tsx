@@ -27,24 +27,12 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Tooltip,
 } from "recharts";
-
-const RISK_BAR_COLORS = [
-  "#8FAF9B", // Low
-  "#C7A66B", // Review / Medium
-  "#C47A63", // High
-  "#D05B5B", // Critical
-];
 
 export default function OverviewPage() {
   const overview = useAsync<OverviewData>(() => fetchOverview(), []);
@@ -142,100 +130,152 @@ export default function OverviewPage() {
                   title="Risk Distribution"
                   subtitle="Volume partition by ML score severity tiers"
                 >
-                  <div className="h-68 w-full pt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[
-                          {
-                            name: "Low (<0.37)",
-                            tier: "Low",
-                            value: overview.data.risk_distribution.low,
-                            fill: RISK_BAR_COLORS[0],
-                          },
-                          {
-                            name: "Review (0.37-0.70)",
-                            tier: "Review",
-                            value: overview.data.risk_distribution.medium,
-                            fill: RISK_BAR_COLORS[1],
-                          },
-                          {
-                            name: "High (0.70-0.90)",
-                            tier: "High",
-                            value: overview.data.risk_distribution.high,
-                            fill: RISK_BAR_COLORS[2],
-                          },
-                          {
-                            name: "Critical (≥0.90)",
-                            tier: "Critical",
-                            value: overview.data.risk_distribution.critical,
-                            fill: RISK_BAR_COLORS[3],
-                          },
-                        ]}
-                        margin={{ top: 12, right: 16, bottom: 4, left: 0 }}
+                  <div className="space-y-6 pt-2">
+                    {/* Header metrics row */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-mono tracking-wider text-[#5E616E] uppercase">
+                          Total Evaluated Volume
+                        </div>
+                        <div className="text-2xl font-serif text-white mt-0.5">
+                          {formatNumber(overview.data.total_transactions)}{" "}
+                          <span className="text-xs font-sans text-[#777A88] font-normal">transactions</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-mono tracking-wider text-[#5E616E] uppercase">
+                          Elevated / Critical Risk
+                        </div>
+                        <div className="text-2xl font-mono text-[#D05B5B] mt-0.5">
+                          {formatPct(
+                            (overview.data.risk_distribution.critical + overview.data.risk_distribution.high) /
+                              overview.data.total_transactions
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Compact Horizontal Stacked Distribution Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-[#777A88] font-mono">
+                        <span>Risk Spectrum Partition</span>
+                        <span className="text-[11px] text-[#5E616E]">Threshold Spectrum [0.00 — 1.00]</span>
+                      </div>
+
+                      {/* Stacked Bar Container */}
+                      <div
+                        className="relative w-full h-8 bg-[#121317] rounded-md p-1 border border-[#1C1D22] flex gap-1 items-center overflow-hidden"
+                        role="progressbar"
+                        aria-label="Risk score distribution across transactions"
                       >
-                        <CartesianGrid
-                          strokeDasharray="2 4"
-                          stroke="#1C1D22"
-                          vertical={false}
-                        />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fill: "#777A88", fontSize: 11, fontFamily: "var(--font-inter)" }}
-                          axisLine={{ stroke: "#1C1D22" }}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fill: "#777A88", fontSize: 11, fontFamily: "var(--font-mono)" }}
-                          axisLine={{ stroke: "#1C1D22" }}
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#040406",
-                            borderColor: "#1C1D22",
-                            borderRadius: "6px",
-                            boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
-                            fontSize: "12px",
-                            fontFamily: "var(--font-inter)",
-                            color: "#E2E3E9",
+                        {/* Low Segment */}
+                        <div
+                          style={{
+                            flex: `${Math.max(overview.data.risk_distribution.low, 1)} 1 0%`,
+                            minWidth: "24px",
                           }}
-                          itemStyle={{ color: "#E2E3E9" }}
-                          cursor={{ fill: "rgba(255,255,255,0.02)" }}
+                          className="h-full rounded-sm bg-[#8FAF9B]/85 hover:bg-[#8FAF9B] transition-colors group relative cursor-pointer"
+                          title={`Low (<0.37): ${formatNumber(overview.data.risk_distribution.low)} txns (${formatPct(
+                            overview.data.risk_distribution.low / overview.data.total_transactions
+                          )})`}
                         />
-                        <Bar
-                          dataKey="value"
-                          radius={[4, 4, 0, 0]}
-                        >
-                          {RISK_BAR_COLORS.map((color, idx) => (
-                            <Cell key={`cell-${idx}`} fill={color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 pt-4 mt-2 border-t border-[#1C1D22] text-center">
-                    <div>
-                      <div className="text-[10px] font-mono text-[#5E616E]">LOW</div>
-                      <div className="text-xs font-mono text-[#8FAF9B]">
-                        {formatNumber(overview.data.risk_distribution.low)}
+                        {/* Review Segment */}
+                        <div
+                          style={{
+                            flex: `${Math.max(overview.data.risk_distribution.medium, 1)} 1 0%`,
+                            minWidth: "16px",
+                          }}
+                          className="h-full rounded-sm bg-[#C7A66B]/85 hover:bg-[#C7A66B] transition-colors group relative cursor-pointer"
+                          title={`Review (0.37–0.70): ${formatNumber(overview.data.risk_distribution.medium)} txns (${formatPct(
+                            overview.data.risk_distribution.medium / overview.data.total_transactions
+                          )})`}
+                        />
+                        {/* High Segment */}
+                        <div
+                          style={{
+                            flex: `${Math.max(overview.data.risk_distribution.high, 1)} 1 0%`,
+                            minWidth: "16px",
+                          }}
+                          className="h-full rounded-sm bg-[#C47A63]/85 hover:bg-[#C47A63] transition-colors group relative cursor-pointer"
+                          title={`High (0.70–0.90): ${formatNumber(overview.data.risk_distribution.high)} txns (${formatPct(
+                            overview.data.risk_distribution.high / overview.data.total_transactions
+                          )})`}
+                        />
+                        {/* Critical Segment */}
+                        <div
+                          style={{
+                            flex: `${Math.max(overview.data.risk_distribution.critical, 1)} 1 0%`,
+                            minWidth: "24px",
+                          }}
+                          className="h-full rounded-sm bg-[#D05B5B]/85 hover:bg-[#D05B5B] transition-colors group relative cursor-pointer"
+                          title={`Critical (≥0.90): ${formatNumber(overview.data.risk_distribution.critical)} txns (${formatPct(
+                            overview.data.risk_distribution.critical / overview.data.total_transactions
+                          )})`}
+                        />
+                      </div>
+
+                      {/* Threshold Markers */}
+                      <div className="flex justify-between text-[10px] font-mono text-[#5E616E] px-0.5">
+                        <span>0.00 (Low)</span>
+                        <span>0.37 (Review)</span>
+                        <span>0.70 (High)</span>
+                        <span>0.90 (Critical)</span>
+                        <span>1.00</span>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-mono text-[#5E616E]">REVIEW</div>
-                      <div className="text-xs font-mono text-[#C7A66B]">
-                        {formatNumber(overview.data.risk_distribution.medium)}
+
+                    {/* Numerical Tiers Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-[#1C1D22]">
+                      <div className="p-3 rounded-md bg-[#121317]/60 border border-[#1C1D22]/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-[#5E616E] uppercase">LOW</span>
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#8FAF9B]" />
+                        </div>
+                        <div className="text-base font-mono font-medium text-[#8FAF9B] mt-1.5">
+                          {formatNumber(overview.data.risk_distribution.low)}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#777A88] mt-0.5">
+                          {formatPct(overview.data.risk_distribution.low / overview.data.total_transactions)} • &lt;0.37
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-mono text-[#5E616E]">HIGH</div>
-                      <div className="text-xs font-mono text-[#C47A63]">
-                        {formatNumber(overview.data.risk_distribution.high)}
+
+                      <div className="p-3 rounded-md bg-[#121317]/60 border border-[#1C1D22]/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-[#5E616E] uppercase">REVIEW</span>
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#C7A66B]" />
+                        </div>
+                        <div className="text-base font-mono font-medium text-[#C7A66B] mt-1.5">
+                          {formatNumber(overview.data.risk_distribution.medium)}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#777A88] mt-0.5">
+                          {formatPct(overview.data.risk_distribution.medium / overview.data.total_transactions)} • 0.37–0.70
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-mono text-[#5E616E]">CRITICAL</div>
-                      <div className="text-xs font-mono text-[#D05B5B]">
-                        {formatNumber(overview.data.risk_distribution.critical)}
+
+                      <div className="p-3 rounded-md bg-[#121317]/60 border border-[#1C1D22]/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-[#5E616E] uppercase">HIGH</span>
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#C47A63]" />
+                        </div>
+                        <div className="text-base font-mono font-medium text-[#C47A63] mt-1.5">
+                          {formatNumber(overview.data.risk_distribution.high)}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#777A88] mt-0.5">
+                          {formatPct(overview.data.risk_distribution.high / overview.data.total_transactions)} • 0.70–0.90
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-md bg-[#121317]/60 border border-[#1C1D22]/80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-[#5E616E] uppercase">CRITICAL</span>
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#D05B5B]" />
+                        </div>
+                        <div className="text-base font-mono font-medium text-[#D05B5B] mt-1.5">
+                          {formatNumber(overview.data.risk_distribution.critical)}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#777A88] mt-0.5">
+                          {formatPct(overview.data.risk_distribution.critical / overview.data.total_transactions)} • ≥0.90
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -345,7 +385,7 @@ export default function OverviewPage() {
                         key={tx.transaction_id}
                         className="py-3 flex items-center justify-between gap-3 group hover:bg-[#121317]/40 px-1 rounded transition-colors"
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <Link
                               href={`/investigate?tx=${tx.transaction_id}`}
@@ -359,13 +399,23 @@ export default function OverviewPage() {
                             Cust: {tx.customer_id} • Device: {tx.device_id.slice(0, 8)}
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="font-mono text-xs text-[#E2E3E9]">
-                            {formatINR(tx.amount)}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="text-right">
+                            <div className="font-mono text-xs text-[#E2E3E9]">
+                              {formatINR(tx.amount)}
+                            </div>
+                            <div className="text-[10px] font-mono text-[#C47A63]">
+                              Score: {tx.risk_score.toFixed(3)}
+                            </div>
                           </div>
-                          <div className="text-[10px] font-mono text-[#C47A63]">
-                            Score: {tx.risk_score.toFixed(3)}
-                          </div>
+                          <Link
+                            href={`/investigate?tx=${tx.transaction_id}`}
+                            className="inline-flex items-center gap-1 text-[11px] font-mono text-[#CC9166] hover:text-white px-2 py-1 rounded bg-[#121317] border border-[#1C1D22] hover:border-[#CC9166]/50 transition-colors"
+                            title={`Investigate transaction ${tx.transaction_id}`}
+                          >
+                            <span>Investigate</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
                         </div>
                       </div>
                     ))}
