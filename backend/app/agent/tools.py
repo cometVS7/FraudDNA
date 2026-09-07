@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import ValidationDomainError
 from app.graph.service import GraphService, get_graph_service
+from app.graph.syndicate import SyndicateDetector
 from app.models.domain import (
     AuditEventModel,
     RiskAssessmentModel,
@@ -191,6 +192,8 @@ class AgentTools:
                 "risk_score": float(row.get("risk_score", 0.0)),
                 "risk_tier": str(row.get("risk_tier", "LOW")),
                 "decision_action": str(row.get("decision_action", "ALLOW")),
+                "network_id": str(row.get("network_id") or row.get("cluster_id") or ""),
+                "cluster_id": str(row.get("cluster_id", "")),
             }
         finally:
             if is_temp and sess is not None:
@@ -417,13 +420,44 @@ class AgentTools:
                 except Exception:
                     pass
 
+            # Fallback to GraphService cluster intelligence
+            self.graph_service.initialize()
+            cluster_obj = next(
+                (c for c in self.graph_service.clusters if c.cluster_id == network_id),
+                None,
+            )
+            patterns_data: list[dict[str, Any]] = []
+            if cluster_obj is not None:
+                detector = SyndicateDetector()
+                tx_ids_to_eval = cluster_obj.member_transaction_ids[:max_transactions]
+                txs = [
+                    self.graph_service.transactions_by_id[tid]
+                    for tid in tx_ids_to_eval
+                    if tid in self.graph_service.transactions_by_id
+                ]
+                cust_list = [c for c in cluster_obj.connected_entity_ids if "cust_" in c]
+                dev_list = [d for d in cluster_obj.connected_entity_ids if "dev_" in d]
+                ip_list = [i for i in cluster_obj.connected_entity_ids if "ip_" in i or "." in i]
+                card_list = [k for k in cluster_obj.connected_entity_ids if "card_" in k]
+                member_entities = {
+                    "customers": cust_list,
+                    "devices": dev_list,
+                    "ips": ip_list,
+                    "cards": card_list,
+                }
+                detected = detector.evaluate_syndicate_patterns(
+                    transactions=txs,
+                    member_entities=member_entities,
+                )
+                patterns_data = [p.model_dump(mode="json") for p in detected]
+
             return {
                 "network_id": network_id,
                 "network_name": f"Syndicate {network_id}",
                 "is_suspicious": True,
                 "propagated_risk_score": 0.85,
                 "risk_tier": "CRITICAL",
-                "patterns": [],
+                "patterns": patterns_data,
             }
         finally:
             if is_temp and sess is not None:

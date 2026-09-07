@@ -93,6 +93,7 @@ class AgentInvestigationService:
             transaction_id=transaction_id,
             status=status,
             findings=findings,
+            is_persisted=findings.is_persisted,
             created_at=datetime.now(UTC),
         )
 

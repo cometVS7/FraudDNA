@@ -165,7 +165,7 @@ class InvestigationGraphRunner:
         )
 
         customer_id = str(tx_prof.get("customer_id", ""))
-        network_id = tx_prof.get("network_id")
+        network_id = tx_prof.get("network_id") or tx_prof.get("cluster_id")
 
         # Ground transaction evidence
         if tx_prof.get("found", True):
@@ -349,7 +349,9 @@ class InvestigationGraphRunner:
         max_tools = state.get("max_steps", 8)
 
         tx_context = state.get("transaction_context", {})
-        network_id = state.get("network_id") or tx_context.get("network_id")
+        network_id = (
+            state.get("network_id") or tx_context.get("network_id") or tx_context.get("cluster_id")
+        )
 
         net_context: dict[str, Any] = {}
         paths_context: list[dict[str, Any]] = []
@@ -388,7 +390,11 @@ class InvestigationGraphRunner:
                     # Extract detected patterns
                     for p in net_raw.get("patterns", []):
                         if p.get("triggered", True):
-                            p_type = p.get("pattern_type", "PATTERN")
+                            p_type = getattr(
+                                p.get("pattern_type"),
+                                "value",
+                                str(p.get("pattern_type", "PATTERN")),
+                            )
                             p_id = f"evi_{hashlib.sha256(f'pat:{network_id}:{p_type}'.encode()).hexdigest()[:8]}"
                             accumulated_evidence.append(
                                 {
@@ -668,7 +674,10 @@ class InvestigationGraphRunner:
         patterns: list[str] = []
         for p in net_context.get("patterns", []):
             if p.get("triggered", True):
-                patterns.append(str(p.get("pattern_type", "SYNDICATE_PATTERN")))
+                p_val = getattr(
+                    p.get("pattern_type"), "value", str(p.get("pattern_type", "SYNDICATE_PATTERN"))
+                )
+                patterns.append(p_val)
 
         # Cited RAG docs
         cited_docs: list[str] = []
@@ -746,19 +755,16 @@ class InvestigationGraphRunner:
                 "Inspect linked accounts in the ego-subgraph",
                 "Review merchant dispute history",
             ]
-            policy_rec = "HOLD" if risk_score >= 0.70 else "REVIEW"
         elif risk_score >= 0.37:
             op_action = "MANUAL_REVIEW_ESCALATION"
             op_priority = "MEDIUM"
             op_reason = "Moderate risk signals warranting human verification."
             next_steps = ["Verify customer phone OTP", "Check card issuer velocity"]
-            policy_rec = "REVIEW"
         else:
             op_action = "CLOSE_BENIGN"
             op_priority = "LOW"
             op_reason = "Transaction attributes fall well within acceptable thresholds."
             next_steps = ["No further operational action required"]
-            policy_rec = "ALLOW"
 
         rec = CaseRecommendation(
             recommended_action=op_action,
@@ -800,9 +806,9 @@ class InvestigationGraphRunner:
             policy_context=[f"POL-003 Threshold Tier: {risk_level_str.upper()}"],
             cited_typology_docs=cited_docs,
             confidence=0.92,
-            recommended_action=policy_rec,
+            recommended_action=op_action,
             recommendation=rec,
-            reasoning=f"Grounded synthesis established across {len(evidence_items)} verifiable evidence items. Policy evaluation indicates {policy_rec}.",
+            reasoning=f"Grounded synthesis established across {len(evidence_items)} verifiable evidence items. Advisory recommendation: {op_action}.",
             limitations=limitations,
             agent_steps=actual_steps,
             tool_trace=tool_records,
@@ -997,11 +1003,14 @@ class InvestigationGraphRunner:
                 payload=payload_data,
             )
             session.commit()
+            output.is_persisted = True
         except Exception as e:
             logger.error(
                 f"Failed to persist investigation {output.investigation_id}: {e}", exc_info=True
             )
             session.rollback()
+            output.is_persisted = False
+            output.limitations.append(f"PostgreSQL persistence failed: {e}")
 
 
 def time_seed() -> str:

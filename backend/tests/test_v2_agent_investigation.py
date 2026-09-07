@@ -208,7 +208,6 @@ def test_adversarial_injection_in_transaction_metadata(
     out: AgentInvestigationOutput = runner.run("tx_0000000")
 
     assert out.risk_score == 0.95
-    assert out.recommended_action == "HOLD"
     assert "attack" in out.fraud_hypothesis.lower() or "injection" in out.fraud_hypothesis.lower()
 
 
@@ -243,7 +242,6 @@ def test_graph_runner_graceful_failover_on_llm_exception(
     assert out.investigation_id.startswith("inv_agent_")
     assert out.transaction_id == "tx_0000000"
     assert 0.0 <= out.risk_score <= 1.0
-    assert out.recommended_action in {"ALLOW", "REVIEW", "HOLD"}
     assert len(out.evidence_items) > 0
     assert len(out.findings) > 0
 
@@ -256,44 +254,87 @@ def test_graph_runner_graceful_failover_on_llm_exception(
 def test_canonical_golden_regression_tx_0001991(
     service: AgentInvestigationService, initialized_graph
 ):
-    """Canonical validation on known fraud transaction tx_0001991."""
-    tx_id = "tx_0001991"
-    if tx_id not in initialized_graph.transactions_by_id:
-        tx_id = next(iter(initialized_graph.transactions_by_id.keys()))
+    """Canonical validation on known fraud transaction tx_0001991.
 
+    Validates:
+    - tx_0001991 is evaluated at risk_score = 0.9994 (CRITICAL tier)
+    - Syndicate patterns (DEVICE_REUSE_RING, MULTI_INFRASTRUCTURE_COLLUSION) are detected
+    - Grounded evidence provenance and non-empty finding citations
+    - AI advisory action is MANUAL_REVIEW_ESCALATION
+    - Independent PolicyEngine decision is evaluated as HOLD
+    - Non-negotiable separation between advisory recommendation and authoritative financial decision.
+    """
+    from app.agent.schemas import AdvisoryAction
+    from app.policy.engine import PolicyEngine
+    from app.policy.models import PolicyAction
+
+    tx_id = "tx_0001991"
     resp = service.investigate(transaction_id=tx_id)
     findings = resp.findings
 
     assert findings.transaction_id == tx_id
     assert findings.investigation_id.startswith("inv_agent_")
-    assert 0.0 <= findings.risk_score <= 1.0
-    assert findings.risk_level in {
-        RiskLevel.LOW,
-        RiskLevel.MEDIUM,
-        RiskLevel.HIGH,
-        RiskLevel.CRITICAL,
-    }
-    assert findings.recommended_action in {"ALLOW", "REVIEW", "HOLD"}
-    assert len(findings.evidence_items) >= 1
-    assert len(findings.findings) >= 1
-    assert len(findings.hypotheses) >= 1
-    assert len(findings.tool_trace) >= 1
+    assert findings.risk_score == 0.9994
+    assert findings.risk_level == RiskLevel.CRITICAL
+    assert findings.recommended_action == AdvisoryAction.MANUAL_REVIEW_ESCALATION
 
-    # Verify each evidence item has valid grounded type and confidence
+    # Assert expected syndicate patterns
+    assert len(findings.detected_patterns) >= 2
+    assert "DEVICE_REUSE_RING" in findings.detected_patterns
+    assert "MULTI_INFRASTRUCTURE_COLLUSION" in findings.detected_patterns
+    assert findings.cluster_context is not None
+
+    # Assert grounded evidence items and citations
+    assert len(findings.evidence_items) >= 4
     for ev in findings.evidence_items:
         assert isinstance(ev.category, EvidenceType)
         assert len(ev.id) > 0
         assert len(ev.snippet) > 0
         assert 0.0 <= ev.confidence <= 1.0
+        assert ev.source in {
+            "transaction_repository",
+            "entity_repository",
+            "risk_orchestrator",
+            "network_intelligence",
+            "syndicate_detector",
+            "shap_explainer",
+            "typology_rag",
+            "audit_service",
+        }
 
-    # Verify recommendation has structured operational triage
-    assert findings.recommendation is not None
-    assert findings.recommendation.priority in {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
-    assert len(findings.recommendation.suggested_next_steps) >= 1
+    # Verify findings cite real evidence IDs
+    ev_id_set = {e.id for e in findings.evidence_items}
+    for f in findings.findings:
+        for ref in f.supporting_evidence_ids:
+            assert ref in ev_id_set
+
+    # Authoritative PolicyEngine Decision Independence
+    policy_engine = PolicyEngine(graph_service=initialized_graph)
+    policy_decision = policy_engine.evaluate_transaction(tx_id)
+
+    assert policy_decision.action == PolicyAction.HOLD
+    assert policy_decision.risk_score == 0.9994
+    assert policy_decision.risk_level == "critical"
+
+    # Strict separation assertion: AI advisory action != Authoritative financial decision
+    assert findings.recommended_action != policy_decision.action.value
+    assert findings.recommended_action == "MANUAL_REVIEW_ESCALATION"
+    assert policy_decision.action.value == "HOLD"
 
 
 # ==============================================================================
-# 5. NON-NEGOTIABLE ARCHITECTURAL INVARIANTS
+# 5. DATABASE PERSISTENCE FAILURE SEMANTICS
+# ==============================================================================
+
+
+def test_database_failure_semantics_is_persisted_flag(runner: InvestigationGraphRunner):
+    """Verify that when persistence is disabled or DB session is absent, is_persisted is False."""
+    out: AgentInvestigationOutput = runner.run("tx_0001991", session=None, persist=False)
+    assert out.is_persisted is False
+
+
+# ==============================================================================
+# 6. NON-NEGOTIABLE ARCHITECTURAL INVARIANTS
 # ==============================================================================
 
 

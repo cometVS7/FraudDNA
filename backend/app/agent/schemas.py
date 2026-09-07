@@ -33,6 +33,20 @@ class EvidenceSeverity(StrEnum):
     CRITICAL = "critical"
 
 
+class AdvisoryAction(StrEnum):
+    """Advisory operational action recommended by AI agent for human fraud analyst triage.
+
+    CRITICAL INVARIANT: The AI agent NEVER produces authoritative financial decisions (ALLOW/REVIEW/HOLD).
+    Financial decisions are solely and deterministically executed by the PolicyEngine.
+    """
+
+    MANUAL_REVIEW_ESCALATION = "MANUAL_REVIEW_ESCALATION"
+    MERCHANT_INQUIRY = "MERCHANT_INQUIRY"
+    CLOSE_BENIGN = "CLOSE_BENIGN"
+    REQUEST_ADDITIONAL_EVIDENCE = "REQUEST_ADDITIONAL_EVIDENCE"
+    FREEZE_SUSPICIOUS_ENTITIES = "FREEZE_SUSPICIOUS_ENTITIES"
+
+
 class AgentEvidenceItem(BaseModel):
     """A single piece of grounded, source-attributed evidence verified by the investigation agent."""
 
@@ -244,9 +258,9 @@ class AgentInvestigationOutput(BaseModel):
         le=1.0,
         description="Confidence score in the investigation findings [0.0, 1.0].",
     )
-    recommended_action: str = Field(
-        ...,
-        description="Investigative recommendation: 'ALLOW', 'REVIEW', or 'HOLD'. Note: Policy Engine makes final decision.",
+    recommended_action: AdvisoryAction | str = Field(
+        default=AdvisoryAction.MANUAL_REVIEW_ESCALATION,
+        description="Advisory operational recommendation for analyst triage (e.g. MANUAL_REVIEW_ESCALATION). Note: Policy Engine exclusively produces authoritative financial decisions.",
     )
     recommendation: CaseRecommendation | None = Field(
         None,
@@ -274,6 +288,10 @@ class AgentInvestigationOutput(BaseModel):
     is_degraded: bool = Field(
         default=False,
         description="True if synthesis executed in degraded / deterministic fallback mode.",
+    )
+    is_persisted: bool = Field(
+        default=False,
+        description="True if investigation record and audit trail were durably written to PostgreSQL.",
     )
 
     @property
@@ -311,6 +329,10 @@ class AgentInvestigationResponse(BaseModel):
     status: str = Field(..., description="Investigation status: 'completed', 'degraded', 'failed'.")
     findings: AgentInvestigationOutput = Field(
         ..., description="Structured findings produced by the agent."
+    )
+    is_persisted: bool = Field(
+        default=False,
+        description="True if investigation record was durably written to PostgreSQL.",
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
