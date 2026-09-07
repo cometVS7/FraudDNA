@@ -131,5 +131,53 @@ class Settings(BaseSettings):
     # Policy Engine Settings
     POLICY_VERSION: str = "2025.1"
 
+    @property
+    def is_production(self) -> bool:
+        """Check whether application is running in production mode."""
+        return self.APP_ENV.lower() in {"production", "prod"}
+
+    @property
+    def is_persistent_mode(self) -> bool:
+        """Check whether persistent database storage is active."""
+        return self.ENABLE_PERSISTENT_STORAGE or self.is_production
+
+    def validate_production_configuration(self) -> None:
+        """Explicitly validate production configuration security.
+
+        Raises ValueError if production mode contains insecure dev defaults.
+        """
+        if not self.is_production:
+            return
+
+        insecure_keys = {
+            "insecure-dev-secret-key-change-in-production",
+            "secret",
+            "changeme",
+            "development",
+            "admin",
+        }
+        if self.SECRET_KEY in insecure_keys or len(self.SECRET_KEY) < 32:
+            raise ValueError(
+                "CRITICAL SECURITY: Production mode requires a strong, cryptographically "
+                "secure SECRET_KEY (minimum 32 characters)."
+            )
+
+        if (
+            "frauddna_password" in self.DATABASE_URL
+            or "frauddna_password" in self.DATABASE_URL_SYNC
+        ):
+            raise ValueError(
+                "CRITICAL SECURITY: Production mode requires explicit production DATABASE_URL credentials; "
+                "default 'frauddna_password' is strictly forbidden."
+            )
+
+        cors_list = (
+            [self.CORS_ORIGINS] if isinstance(self.CORS_ORIGINS, str) else list(self.CORS_ORIGINS)
+        )
+        if "*" in cors_list:
+            raise ValueError(
+                "CRITICAL SECURITY: Wildcard CORS ('*') is strictly forbidden in production mode."
+            )
+
 
 settings = Settings()

@@ -10,6 +10,21 @@ jobs:
   backend-checks:
     name: Backend Lint, Type Check & Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: frauddna_user
+          POSTGRES_PASSWORD: frauddna_password
+          POSTGRES_DB: frauddna_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +49,18 @@ jobs:
         run: |
           mypy --config-file backend/pyproject.toml backend/app
 
-      - name: Run Backend Tests
+      - name: Run Alembic Database Migrations
+        env:
+          DATABASE_URL_SYNC: postgresql://frauddna_user:frauddna_password@localhost:5432/frauddna_db
+        run: |
+          cd backend
+          alembic upgrade head
+
+      - name: Run Backend Tests (including PostgreSQL E2E)
+        env:
+          DATABASE_URL: postgresql+asyncpg://frauddna_user:frauddna_password@localhost:5432/frauddna_db
+          DATABASE_URL_SYNC: postgresql://frauddna_user:frauddna_password@localhost:5432/frauddna_db
+          TEST_DATABASE_URL: postgresql://frauddna_user:frauddna_password@localhost:5432/frauddna_db
         run: |
           pytest backend/tests -v --tb=short
 
@@ -47,6 +73,7 @@ jobs:
           docker run --rm frauddna-backend:prod ls -la /app/ml/models/lightgbm_model.joblib
           docker run --rm frauddna-backend:prod ls -la /app/ml/models/feature_pipeline.joblib
           docker run --rm frauddna-backend:prod python -c "from app.graph.service import get_graph_service; gs = get_graph_service(); gs.initialize(); print('SUCCESS: GraphService initialized inside container with', len(gs.graph.nodes), 'nodes')"
+
 
   frontend-checks:
     name: Frontend Lint, Type Check & Build

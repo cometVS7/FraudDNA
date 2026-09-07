@@ -60,6 +60,15 @@ class RequestCorrelationMiddleware(BaseHTTPMiddleware):
             # Propagate correlation headers back to client
             response.headers[settings.REQUEST_ID_HEADER] = request_id
             response.headers[settings.CORRELATION_ID_HEADER] = correlation_id
+            # Security headers
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            if settings.is_production:
+                response.headers["Strict-Transport-Security"] = (
+                    "max-age=31536000; includeSubDomains"
+                )
             return response
         finally:
             clear_request_context()

@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,6 +68,18 @@ def create_app() -> FastAPI:
 
     # 5. Register API v1 routes
     application.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
+
+    # 6. Root Health & Readiness probes for orchestrators
+    @application.get("/health", include_in_schema=False)
+    async def root_health() -> dict[str, str]:
+        return {"status": "healthy", "service": settings.APP_NAME, "version": "0.1.0"}
+
+    @application.get("/ready", include_in_schema=False)
+    async def root_ready() -> dict[str, Any]:
+        from app.api.v1.endpoints.health import get_readiness
+
+        res = await get_readiness()
+        return res.model_dump()
 
     return application
 
