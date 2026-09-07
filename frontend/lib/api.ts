@@ -2,15 +2,46 @@
  * FraudDNA Frontend API Client
  *
  * Centralized, typed API layer for backend communication.
- * Avoids scattering raw fetch() calls throughout components.
+ * Connects with FastAPI v1 endpoints with strong typing, error formatting,
+ * and correlation propagation.
  */
+
+import type {
+  CaseCreateRequest,
+  CaseListResponse,
+  CaseResponse,
+  CaseStatusUpdateRequest,
+} from "@/types/case";
+import type {
+  NetworkExposure,
+  NetworkFinding,
+  NetworkIntelligenceResponse,
+  NetworkPath,
+  NetworkTimeline,
+  PathSearchRequest,
+  PathSearchResponse,
+  SyndicatePattern,
+} from "@/types/network";
+import type {
+  AgentInvestigationResponse,
+} from "@/types/agent";
+import type {
+  AuditChainVerifyResponse,
+  AuditEventListResponse,
+  AuditEventResponse,
+} from "@/types/audit";
+
+export * from "@/types/case";
+export * from "@/types/network";
+export * from "@/types/agent";
+export * from "@/types/audit";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 interface RequestOptions {
   method?: string;
   body?: unknown;
-  params?: Record<string, string | number | boolean | undefined>;
+  params?: Record<string, string | number | boolean | undefined | null>;
 }
 
 export class ApiError extends Error {
@@ -63,7 +94,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value !== undefined && value !== null) {
         searchParams.append(key, String(value));
       }
     });
@@ -172,11 +203,40 @@ export function fetchTransactions(params?: {
   suspicious_only?: boolean;
   search?: string;
 }): Promise<TransactionsResponse> {
-  return request<TransactionsResponse>("/transactions", { params: params as Record<string, string | number | boolean | undefined> });
+  return request<TransactionsResponse>("/transactions", { params });
 }
 
 export function fetchTransaction(id: string): Promise<Transaction> {
   return request<Transaction>(`/transactions/${id}`);
+}
+
+// ─── Cases (V2-09 Core) ──────────────────────────────────────
+export function fetchCases(params?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  priority?: string;
+  owner?: string;
+}): Promise<CaseListResponse> {
+  return request<CaseListResponse>("/cases", { params });
+}
+
+export function createCase(data: CaseCreateRequest): Promise<CaseResponse> {
+  return request<CaseResponse>("/cases", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function fetchCase(caseId: string): Promise<CaseResponse> {
+  return request<CaseResponse>(`/cases/${caseId}`);
+}
+
+export function updateCaseStatus(caseId: string, data: CaseStatusUpdateRequest): Promise<CaseResponse> {
+  return request<CaseResponse>(`/cases/${caseId}/status`, {
+    method: "PATCH",
+    body: data,
+  });
 }
 
 // ─── Graph ───────────────────────────────────────────────────
@@ -217,7 +277,7 @@ export function fetchClusterGraph(clusterId: string): Promise<GraphData> {
   return request<GraphData>(`/graph/cluster/${clusterId}`);
 }
 
-// ─── Clusters ────────────────────────────────────────────────
+// ─── Networks & Intelligence (V2-07) ─────────────────────────
 export interface ClusterSummary {
   cluster_id: string;
   cluster_risk_score: number;
@@ -248,10 +308,83 @@ export function fetchClusters(params?: {
   offset?: number;
   sort_by?: string;
 }): Promise<ClustersResponse> {
-  return request<ClustersResponse>("/clusters", { params: params as Record<string, string | number | boolean | undefined> });
+  return request<ClustersResponse>("/clusters", { params });
 }
 
-// ─── Investigations ──────────────────────────────────────────
+export function fetchNetworkIntelligence(networkId: string, params?: {
+  as_of?: string;
+  max_nodes?: number;
+}): Promise<NetworkIntelligenceResponse> {
+  return request<NetworkIntelligenceResponse>(`/networks/${networkId}/intelligence`, { params });
+}
+
+export function fetchNetworkGraph(networkId: string, maxNodes?: number): Promise<GraphData> {
+  return request<GraphData>(`/networks/${networkId}/graph`, {
+    params: maxNodes ? { max_nodes: maxNodes } : undefined,
+  });
+}
+
+export function fetchNetworkPaths(networkId: string, limit?: number): Promise<NetworkPath[]> {
+  return request<NetworkPath[]>(`/networks/${networkId}/paths`, {
+    params: limit ? { limit } : undefined,
+  });
+}
+
+export function fetchNetworkTimeline(networkId: string): Promise<NetworkTimeline> {
+  return request<NetworkTimeline>(`/networks/${networkId}/timeline`);
+}
+
+export function fetchNetworkExposure(networkId: string): Promise<NetworkExposure> {
+  return request<NetworkExposure>(`/networks/${networkId}/exposure`);
+}
+
+export function fetchNetworkPatterns(networkId: string): Promise<SyndicatePattern[]> {
+  return request<SyndicatePattern[]>(`/networks/${networkId}/patterns`);
+}
+
+export function fetchNetworkFindings(networkId: string): Promise<NetworkFinding[]> {
+  return request<NetworkFinding[]>(`/networks/${networkId}/findings`);
+}
+
+export function searchNetworkPaths(payload: PathSearchRequest): Promise<PathSearchResponse> {
+  return request<PathSearchResponse>("/networks/paths/search", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+// ─── Entities (V2-06) ────────────────────────────────────────
+export interface EntityProfileResponse {
+  entity_type: string;
+  entity_id: string;
+  risk_score: number;
+  risk_tier: string;
+  status: string;
+  first_seen: string | null;
+  last_seen: string | null;
+  lifetime_transaction_count?: number;
+  lifetime_volume_inr?: number;
+  distinct_devices_count?: number;
+  distinct_cards_count?: number;
+  distinct_ips_count?: number;
+  shared_entity_count?: number;
+  [key: string]: unknown;
+}
+
+export function fetchEntityProfile(entityType: string, entityId: string, asOf?: string): Promise<EntityProfileResponse> {
+  return request<EntityProfileResponse>(`/entities/${entityType}/${entityId}`, {
+    params: asOf ? { as_of: asOf } : undefined,
+  });
+}
+
+export function fetchEntityGraph(entityType: string, entityId: string, params?: {
+  depth?: number;
+  max_nodes?: number;
+}): Promise<GraphData> {
+  return request<GraphData>(`/entities/${entityType}/${entityId}/graph`, { params });
+}
+
+// ─── Investigations (Deterministic V2-03) ────────────────────
 export interface RiskFactor {
   feature: string;
   value: unknown;
@@ -316,58 +449,23 @@ export function createInvestigation(transactionId: string): Promise<Investigatio
   });
 }
 
-// ─── Agent ───────────────────────────────────────────────────
-export interface AgentEvidenceItem {
-  source: string;
-  evidence_type: string;
-  snippet: string;
-  severity: string;
+export function getInvestigation(investigationId: string): Promise<InvestigationResponse> {
+  return request<InvestigationResponse>(`/investigations/${investigationId}`);
 }
 
-export interface ToolExecutionRecord {
-  tool_name: string;
-  tool_args: Record<string, unknown>;
-  status: string;
-  duration_ms: number;
-  error_message: string | null;
-}
-
-export interface AgentFindings {
-  investigation_id: string;
-  transaction_id: string;
-  risk_level: string;
-  risk_score: number;
-  summary: string;
-  fraud_hypothesis: string;
-  evidence: AgentEvidenceItem[];
-  related_entities: string[];
-  cluster_context: string | null;
-  historical_cases: string[];
-  policy_context: string[];
-  confidence: number;
-  recommended_action: string;
-  reasoning: string;
-  limitations: string[];
-  agent_steps: number;
-  tool_trace: ToolExecutionRecord[];
-}
-
-export interface AgentInvestigationResponse {
-  investigation_id: string;
-  transaction_id: string;
-  status: string;
-  findings: AgentFindings;
-  created_at: string;
-}
-
-export function createAgentInvestigation(transactionId: string): Promise<AgentInvestigationResponse> {
+// ─── AI Agent Investigation (V2-08) ──────────────────────────
+export function createAgentInvestigation(transactionId: string, maxSteps?: number): Promise<AgentInvestigationResponse> {
   return request<AgentInvestigationResponse>("/agent/investigate", {
     method: "POST",
-    body: { transaction_id: transactionId },
+    body: { transaction_id: transactionId, max_steps: maxSteps },
   });
 }
 
-// ─── Policy Decision ─────────────────────────────────────────
+export function getAgentInvestigation(investigationId: string): Promise<AgentInvestigationResponse> {
+  return request<AgentInvestigationResponse>(`/agent/investigate/${investigationId}`);
+}
+
+// ─── Policy Decision (Deterministic V2-04) ───────────────────
 export interface PolicyDecision {
   decision_id: string;
   transaction_id: string;
@@ -389,7 +487,27 @@ export function evaluatePolicy(transactionId: string): Promise<PolicyDecision> {
   });
 }
 
-// ─── Simulation ──────────────────────────────────────────────
+// ─── Audit Trail (V2-04 & V2-06) ─────────────────────────────
+export function fetchAuditEvents(params?: {
+  limit?: number;
+  offset?: number;
+  entity_type?: string;
+  entity_id?: string;
+  event_type?: string;
+  actor?: string;
+}): Promise<AuditEventListResponse> {
+  return request<AuditEventListResponse>("/audit", { params });
+}
+
+export function fetchAuditEvent(eventId: string): Promise<AuditEventResponse> {
+  return request<AuditEventResponse>(`/audit/${eventId}`);
+}
+
+export function verifyAuditChain(): Promise<AuditChainVerifyResponse> {
+  return request<AuditChainVerifyResponse>("/audit/verify/chain");
+}
+
+// ─── Simulation & Evaluation ─────────────────────────────────
 export interface SimulationConfig {
   fraud_threshold: number;
   review_threshold?: number | null;
@@ -446,7 +564,6 @@ export function compareSimulations(configs: SimulationConfig[]): Promise<Simulat
   });
 }
 
-// ─── Evaluation ──────────────────────────────────────────────
 export interface EvaluationMetrics {
   evaluation_type: string;
   held_out_test_size: number;
@@ -487,7 +604,6 @@ export function fetchEvaluation(): Promise<EvaluationMetrics> {
   return request<EvaluationMetrics>("/evaluation");
 }
 
-// ─── RAG ─────────────────────────────────────────────────────
 export interface RAGSearchResult {
   source_id: string;
   document_title: string;

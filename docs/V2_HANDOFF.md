@@ -387,50 +387,42 @@ Phase V2-05: Entity Intelligence & Graph Integration    [COMPLETE - VERIFIED]
 Phase V2-06: Advanced Risk Intelligence & Orchestration [COMPLETE - VERIFIED]
 Phase V2-06-STABILIZATION: Forensic Repair & Regression [COMPLETE - VERIFIED]
 Phase V2-07: Risk Network Intelligence Engine           [COMPLETE - VERIFIED]
-Phase V2-08: AI Investigation Agent                     [NEXT PLANNED PHASE]
+Phase V2-08: AI Investigation Agent                     [COMPLETE - VERIFIED]
+Phase V2-09: Case Intelligence & Workbench (Full Stack) [COMPLETE - VERIFIED]
+Phase V2-10: Production Hardening & PostgreSQL Load     [NEXT PLANNED PHASE]
 ==============================================================================
 ```
 
 ---
 
-## 23. Next Planned Phase: V2-08 — AI Investigation Agent
+## 23. Completed Phase: V2-08 — AI Investigation Agent
 
-**OBJECTIVE**: Implement the autonomous AI Investigation Agent utilizing LangGraph, tool calling, RAG knowledge retrieval, and grounded evidence synthesis.
-
-### Conceptual Architecture:
-```
-  [ V2-07 Risk Network Intelligence ] + [ V2-06 Orchestrated Risk Signals ]
-                               │
-                               ▼
-            [ LangGraph Investigation State Graph ]
-            ├── Tool Calling (Entity Lookup, Network Graph, Typology RAG)
-            ├── Deterministic Evidence Grounding
-            ├── Multi-Step Autonomous Reasoning
-            └── Structured Output Synthesis (Investigation Findings, Hypotheses, Case Summary)
-                               │
-                               ▼
-                 [ Future Case & Decision Layer (V2-09) ]
-```
-
-*Note: Phase V2-08 has NOT been implemented yet. It is the immediate next phase.*
+**DELIVERABLES**:
+- LangGraph multi-step reactive investigation engine (`app/agent/`)
+- 6 Read-only investigative tools (`get_transaction_profile`, `get_entity_dossier`, `get_network_subgraph`, `get_syndicate_patterns`, `search_network_paths`, `query_fraud_typology_rag`)
+- Strict evidence grounding and anti-hallucination verification
+- Separation of advisory recommendations from authoritative policy decisions
+- Baseline: 249/249 backend tests passing
 
 ---
 
-## 24. Future Roadmap
+## 24. Completed Phase: V2-09 — Case Intelligence & Investigation Workbench
 
-- **V2-08**: AI Investigation Agent (LangGraph, tool calling, evidence synthesis) — *PLANNED*
-- **V2-09**: Case & Decision Intelligence (Case workflows, analyst notes, decision lifecycle) — *PLANNED*
-- **V2-10**: Production Hardening (Live PostgreSQL load testing, performance tuning, security audit) — *PLANNED*
-- **V2-11**: Full UI Integration (Next.js risk command center, graph explorer, investigation workspace) — *PLANNED*
+**DELIVERABLES**:
+- **Full-Stack Investigation Workbench**: 3-column operational layout with interactive graph explorer, SHAP waterfall, entity drawer, pathfinder dialog, and RAG citation viewer (`frontend/app/investigate/page.tsx`).
+- **Operational Case Management**: Case queue triage table, multi-parameter filtering, case creation modal, lifecycle state transitions (`NEW` $\to$ `IN_REVIEW` $\to$ `ESCALATED` $\to$ `RESOLVED` $\to$ `CLOSED`), and deep-link details (`frontend/app/cases/page.tsx`, `frontend/app/cases/[case_id]/page.tsx`).
+- **Decision Intelligence Card**: Crystal-clear visual & architectural bifurcation between **Deterministic Authoritative Action** (`ALLOW` / `REVIEW` / `HOLD`) and **AI Advisory Recommendation** (`MANUAL_REVIEW_ESCALATION`, etc.).
+- **Audit Ledger & SHA-256 Verifier**: Dedicated audit inspection page with live cryptographic tamper-evidence verification badge (`frontend/app/audit/page.tsx`).
+- **Backend Case & Integration Suite**: `test_v2_09_workbench_integration.py` bringing test baseline to **253/253 passing**.
+- **Build Quality**: Next.js 16 production build compiled cleanly across all 10 routes; Ruff, Ruff Format, and Mypy 100% clean.
+
+---
+
+## 25. Future Roadmap
+
+- **V2-10**: Production Hardening (Live PostgreSQL load testing, performance tuning, security audit) — *NEXT PLANNED PHASE*
+- **V2-11**: Advanced Analytics & Operations Command Center — *PLANNED*
 - **V2-12**: Final Buildathon & Demo Packaging — *PLANNED*
-
----
-
-## 25. Frontend / UI Status
-
-- The existing frontend in `frontend/` is the functional V1 console.
-- V2 backend intelligence services (4-layer risk, syndicate detection, multi-hop paths, structured findings) are complete and expose clean, UI-ready REST APIs.
-- The major V2 UI integration will occur in **Phase V2-11** once the AI Investigation Agent (V2-08) and Case Management (V2-09) layers are fully established.
 
 ---
 
@@ -449,8 +441,13 @@ To the next Antigravity 2.0 agent taking over this workspace:
    ```bash
    .venv\Scripts\python.exe -m pytest backend/tests -q
    ```
-   *(All 233 tests must pass).*
-4. **Do not redo completed work**: Phases V2-01 through V2-07 are complete and verified.
-5. **Protect `main`**: All work remains on `v2/production-platform` via PR #15.
-6. **Operate in Goal Mode (Zero-HITL)**: Execute autonomously without routine permission requests.
-7. **Next Step**: When instructed to proceed, begin **Phase V2-08 — AI Investigation Agent**.
+   *(All 253 tests must pass).*
+4. **Verify frontend quality**:
+   ```bash
+   npm --prefix frontend run lint
+   npm --prefix frontend run build
+   ```
+5. **Do not redo completed work**: Phases V2-01 through V2-09 are complete and verified.
+6. **Protect `main`**: All work remains on `v2/production-platform` via PR #15.
+7. **Operate in Goal Mode (Zero-HITL)**: Execute autonomously without routine permission requests.
+8. **Next Step**: When instructed to proceed, begin **Phase V2-10 — Production Hardening & PostgreSQL Load Testing**.

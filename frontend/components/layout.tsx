@@ -9,6 +9,7 @@ import {
   ListOrdered,
   Share2,
   Search,
+  Briefcase,
   SlidersHorizontal,
   BarChart3,
   ClipboardList,
@@ -27,9 +28,10 @@ interface NavItem {
 
 const OVERVIEW_NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/cases", label: "Case Queue", icon: Briefcase },
+  { href: "/investigate", label: "Workbench", icon: Search },
   { href: "/transactions", label: "Transactions", icon: ListOrdered },
   { href: "/frauddna", label: "FraudDNA Network", icon: Share2 },
-  { href: "/investigate", label: "Investigate", icon: Search },
   { href: "/simulation", label: "Simulation", icon: SlidersHorizontal },
   { href: "/evaluation", label: "Evaluation", icon: BarChart3 },
 ];

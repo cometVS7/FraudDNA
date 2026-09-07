@@ -144,9 +144,10 @@ class CaseService:
             case.status = target_status
 
             now = datetime.now(UTC)
-            if target_status == CaseStatus.CLOSED.value:
-                case.closed_at = now
-            elif current_status == CaseStatus.CLOSED.value:
+            if target_status in {CaseStatus.RESOLVED.value, CaseStatus.CLOSED.value}:
+                if not case.closed_at:
+                    case.closed_at = now
+            elif current_status in {CaseStatus.RESOLVED.value, CaseStatus.CLOSED.value}:
                 case.closed_at = None
 
         if request.notes:
