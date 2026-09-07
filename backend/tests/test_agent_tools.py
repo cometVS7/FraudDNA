@@ -15,7 +15,18 @@ def sample_tx_id() -> str:
 
 def test_agent_tools_allowlist() -> None:
     tools = AgentTools()
-    assert len(tools.ALLOWLISTED_TOOLS) == 7
+    assert len(tools.ALLOWLISTED_TOOLS) >= 9
+    # Core V2-08 tools
+    assert "get_transaction_profile" in tools.ALLOWLISTED_TOOLS
+    assert "get_risk_orchestration" in tools.ALLOWLISTED_TOOLS
+    assert "get_shap_signals" in tools.ALLOWLISTED_TOOLS
+    assert "get_entity_profile" in tools.ALLOWLISTED_TOOLS
+    assert "get_entity_ego_graph" in tools.ALLOWLISTED_TOOLS
+    assert "get_network_intelligence" in tools.ALLOWLISTED_TOOLS
+    assert "search_network_paths" in tools.ALLOWLISTED_TOOLS
+    assert "search_typology_rag" in tools.ALLOWLISTED_TOOLS
+    assert "get_audit_history" in tools.ALLOWLISTED_TOOLS
+    # Compatibility aliases
     assert "get_transaction_history" in tools.ALLOWLISTED_TOOLS
     assert "get_customer_profile" in tools.ALLOWLISTED_TOOLS
     assert "get_related_entities" in tools.ALLOWLISTED_TOOLS
