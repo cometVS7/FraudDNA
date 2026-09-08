@@ -74,7 +74,7 @@ def test_http_security_headers_present(client: TestClient):
 
 def test_graph_and_path_bounds_enforcement(client: TestClient):
     """Verify that excessive graph search bounds are rejected with HTTP 422."""
-    # Path search with depth > 4
+    # Path search with depth > 3 (e.g. 4)
     resp = client.post(
         "/api/v1/networks/paths/search",
         json={
@@ -82,7 +82,7 @@ def test_graph_and_path_bounds_enforcement(client: TestClient):
             "source_id": "cust_00001",
             "target_type": "device",
             "target_id": "dev_00001",
-            "max_depth": 10,
+            "max_depth": 4,
             "max_paths": 100,
         },
     )

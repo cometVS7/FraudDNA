@@ -55,7 +55,7 @@ class NetworkPath(BaseModel):
     path_id: str = Field(..., description="Unique deterministic path identifier")
     source_id: str = Field(..., description="Source entity ID")
     target_id: str = Field(..., description="Target entity ID")
-    hop_count: int = Field(..., ge=1, le=4, description="Number of hops in the path")
+    hop_count: int = Field(..., ge=1, le=3, description="Number of hops in the path")
     path_strength: float = Field(
         ..., ge=0.0, le=1.0, description="Calculated path relevance score [0.0, 1.0]"
     )
@@ -251,7 +251,7 @@ class PathSearchRequest(BaseModel):
     source_id: str = Field(..., description="Source entity ID")
     target_type: str = Field(..., description="Target entity category")
     target_id: str = Field(..., description="Target entity ID")
-    max_depth: int = Field(default=3, ge=1, le=4, description="Maximum traversal depth")
+    max_depth: int = Field(default=3, ge=1, le=3, description="Maximum traversal depth")
     max_paths: int = Field(default=10, ge=1, le=50, description="Maximum paths to return")
 
 

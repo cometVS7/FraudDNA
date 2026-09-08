@@ -201,9 +201,9 @@ class NetworkIntelligenceService:
         max_paths: int = 10,
     ) -> PathSearchResponse:
         """Find connection paths between two arbitrary entities across the graph."""
-        if max_depth < 1 or max_depth > 4:
+        if max_depth < 1 or max_depth > 3:
             raise ValidationDomainError(
-                f"Search depth must be between 1 and 4. Requested: {max_depth}",
+                f"Search depth must be between 1 and 3. Requested: {max_depth}",
                 details={"max_depth": max_depth},
             )
 
