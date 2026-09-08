@@ -16,6 +16,8 @@ import {
   ChevronRight,
   ShieldCheck,
   RefreshCw,
+  ClipboardList,
+  Lock,
 } from "lucide-react";
 
 function AuditContent() {
@@ -57,63 +59,64 @@ function AuditContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-[#1C1D22] pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="border-b border-white/[0.06] pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-            IMMUTABLE GOVERNANCE LEDGER
+          <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-1.5">
+            <ClipboardList className="h-3.5 w-3.5" />
+            <span>IMMUTABLE GOVERNANCE LEDGER</span>
           </div>
-          <h1 className="text-3xl font-serif tracking-tight text-white font-normal mt-1">
-            Audit Trail & Cryptographic Verifier
+          <h1 className="text-2xl sm:text-3xl font-serif tracking-tight text-white font-normal mt-1">
+            Audit Trail & SHA-256 Verifier
           </h1>
           <p className="text-xs text-[#9194A1] font-sans mt-1">
-            Tamper-evident SHA-256 hash-chained ledger recording all decisions, AI investigations, and case transitions.
+            Cryptographically chained SHA-256 audit ledger recording all policy decisions, AI agent investigations, and case transitions.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setChainVerifyKey((k) => k + 1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded bg-[#121317] border border-[#1C1D22] text-[#E2E3E9] hover:border-[#CC9166]/40 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono rounded-lg bg-[#14161F] border border-white/[0.08] text-[#E2E3E9] hover:border-[#CC9166]/60 transition-all shadow-md"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            <span>Verify Chain</span>
+            <span>Verify SHA-256 Chain</span>
           </button>
         </div>
       </div>
 
       {/* Cryptographic Proof Banner */}
-      <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center text-[#10B981]">
-            <ShieldCheck className="h-6 w-6" />
+      <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="h-10 w-10 rounded-xl bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center text-[#10B981] shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+            <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Cryptographic Audit Chain Integrity
+                SHA-256 Audit Chain Integrity
               </span>
-              <span className="px-2 py-0.5 text-[9px] font-mono rounded bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/40 font-semibold">
-                100% VALID
+              <span className="px-2 py-0.5 text-[9px] font-mono rounded-md bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/40 font-semibold">
+                CHAIN VALID
               </span>
             </div>
             <p className="text-xs text-[#9194A1] font-sans mt-0.5">
-              Every audit block is linked via recursive SHA-256 hashes (H_i = SHA256(H_i-1 || Payload)).
+              Every block is cryptographically sealed via recursive SHA-256 hashing (H_i = SHA256(H_i-1 || Payload)).
             </p>
           </div>
         </div>
 
         {verify && (
-          <div className="flex items-center gap-6 text-xs font-mono text-right self-start md:self-auto border-t md:border-t-0 border-[#1C1D22] pt-3 md:pt-0">
+          <div className="flex items-center gap-6 text-xs font-mono text-right self-start md:self-auto border-t md:border-t-0 border-white/[0.06] pt-3 md:pt-0">
             <div>
-              <div className="text-[10px] text-[#5E616E] uppercase">Verified Events</div>
+              <div className="text-[10px] text-[#777A88] uppercase">Verified Blocks</div>
               <div className="text-base font-semibold text-white mt-0.5">
                 {verify.total_verified || events.length} blocks
               </div>
             </div>
             {verify.head_event_hash && (
               <div>
-                <div className="text-[10px] text-[#5E616E] uppercase">Head Hash</div>
-                <div className="text-[11px] text-[#CC9166] mt-0.5 truncate max-w-[140px]">
+                <div className="text-[10px] text-[#777A88] uppercase">Head Hash</div>
+                <div className="text-[11px] text-[#CC9166] mt-0.5 truncate max-w-[140px] font-mono">
                   {verify.head_event_hash}
                 </div>
               </div>
@@ -123,7 +126,7 @@ function AuditContent() {
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-xl backdrop-blur-xl">
         <div className="relative flex-1 min-w-[240px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5E616E]" />
           <input
@@ -131,7 +134,7 @@ function AuditContent() {
             placeholder="Filter by entity ID (e.g. tx_0001991, case_01)..."
             value={searchEntity}
             onChange={(e) => setSearchEntity(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#121317] border border-[#1C1D22] rounded font-mono text-[#E2E3E9] placeholder-[#5E616E] focus:outline-none focus:border-[#CC9166]"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#12141A] border border-white/[0.08] rounded-lg font-mono text-[#E2E3E9] placeholder-[#5E616E] focus:outline-none focus:border-[#CC9166] transition-colors"
           />
         </div>
 
@@ -140,7 +143,7 @@ function AuditContent() {
           <select
             value={eventTypeFilter}
             onChange={(e) => setEventTypeFilter(e.target.value)}
-            className="bg-[#121317] border border-[#1C1D22] rounded px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#CC9166]"
+            className="bg-[#12141A] border border-white/[0.08] rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#CC9166]"
           >
             <option value="">All Event Types</option>
             <option value="POLICY_EVALUATION">POLICY_EVALUATION</option>
@@ -151,8 +154,8 @@ function AuditContent() {
         </div>
       </div>
 
-      {/* Audit Event Ledger Table / Stream */}
-      <div className="border border-[#1C1D22] rounded-lg overflow-hidden bg-[#040406] shadow-xl">
+      {/* Audit Event Ledger Stream */}
+      <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-[#0A0C10]/95 shadow-2xl backdrop-blur-xl">
         {auditData.status === "loading" && (
           <div className="p-8 text-center text-xs text-[#777A88]">
             Verifying and loading audit events...
@@ -165,12 +168,12 @@ function AuditContent() {
           </div>
         )}
 
-        <div className="divide-y divide-[#1C1D22]/60">
+        <div className="divide-y divide-white/[0.04]">
           {events.map((evt) => {
             const isExpanded = expandedEventId === evt.id;
 
             return (
-              <div key={evt.id} className="p-4 hover:bg-[#121317]/50 transition-colors space-y-2">
+              <div key={evt.id} className="p-4 hover:bg-[#12141A]/60 transition-colors space-y-2">
                 <div
                   onClick={() => setExpandedEventId(isExpanded ? null : evt.id)}
                   className="flex items-start justify-between gap-4 cursor-pointer select-none"
@@ -180,10 +183,10 @@ function AuditContent() {
                       <span className="font-mono text-[11px] font-bold text-[#CC9166]">
                         {evt.event_type}
                       </span>
-                      <span className="text-[10px] font-mono text-[#5E616E]">
-                        Target: {evt.entity_type} / {evt.entity_id}
+                      <span className="text-[10px] font-mono text-[#777A88]">
+                        Target: {evt.entity_type} / <span className="text-[#E2E3E9]">{evt.entity_id}</span>
                       </span>
-                      <span className="text-[9px] font-mono text-[#777A88] bg-[#121317] px-2 py-0.5 rounded border border-[#1C1D22]">
+                      <span className="text-[9px] font-mono text-[#9194A1] bg-[#12141A] px-2 py-0.5 rounded-md border border-white/[0.06]">
                         actor: {evt.actor} ({evt.actor_type})
                       </span>
                     </div>
@@ -195,8 +198,11 @@ function AuditContent() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] text-[#10B981]">Hash Verified</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="font-mono text-[10px] text-[#10B981] flex items-center gap-1">
+                      <Lock className="h-2.5 w-2.5" />
+                      <span>SHA-256 Verified</span>
+                    </span>
                     {isExpanded ? (
                       <ChevronDown className="h-3.5 w-3.5 text-[#777A88]" />
                     ) : (
@@ -206,23 +212,23 @@ function AuditContent() {
                 </div>
 
                 {isExpanded && (
-                  <div className="pt-3 border-t border-[#1C1D22] bg-[#08080A]/60 p-3 rounded space-y-2 text-xs font-mono">
+                  <div className="pt-3 border-t border-white/[0.06] bg-[#0E1017]/80 p-3.5 rounded-lg space-y-2 text-xs font-mono">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px]">
                       <div>
-                        <span className="text-[#5E616E]">Event Hash:</span>
-                        <div className="text-[#CC9166] break-all">{evt.event_hash}</div>
+                        <span className="text-[#777A88]">Current Block Hash:</span>
+                        <div className="text-[#CC9166] break-all font-semibold mt-0.5">{evt.event_hash}</div>
                       </div>
                       <div>
-                        <span className="text-[#5E616E]">Previous Hash:</span>
-                        <div className="text-[#777A88] break-all">
+                        <span className="text-[#777A88]">Previous Block Hash:</span>
+                        <div className="text-[#9194A1] break-all font-semibold mt-0.5">
                           {evt.previous_hash || "(genesis block)"}
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-[#5E616E]">Payload Snapshot:</span>
-                      <pre className="text-[10px] font-mono bg-[#121317] p-2.5 rounded text-[#9194A1] overflow-x-auto mt-1">
+                      <span className="text-[10px] text-[#777A88]">Payload Snapshot:</span>
+                      <pre className="text-[10px] font-mono bg-[#12141A] p-3 rounded-lg text-[#9194A1] overflow-x-auto mt-1 border border-white/[0.04]">
                         {JSON.stringify(evt.payload, null, 2)}
                       </pre>
                     </div>

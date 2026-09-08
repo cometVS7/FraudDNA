@@ -8,7 +8,14 @@ import { CaseActionToolbar } from "@/components/workbench/case-action-toolbar";
 import { useAsync } from "@/hooks/use-async";
 import { fetchCase } from "@/lib/api";
 import type { CaseResponse } from "@/types/case";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  FileText,
+  Calendar,
+  User,
+  Zap,
+} from "lucide-react";
 
 export default function CaseDetailPage({
   params,
@@ -27,7 +34,7 @@ export default function CaseDetailPage({
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-[1400px] mx-auto pb-12">
         {/* Back Link */}
         <div>
           <Link
@@ -46,12 +53,12 @@ export default function CaseDetailPage({
         {c && (
           <div className="space-y-6">
             {/* Header Card */}
-            <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-6 shadow-2xl">
+            <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-6 shadow-2xl backdrop-blur-xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-[#5E616E]">CASE /</span>
-                    <span className="font-mono text-sm font-semibold text-[#CC9166]">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-xs text-[#777A88]">CASE /</span>
+                    <span className="font-mono text-sm font-bold text-[#CC9166]">
                       {c.id}
                     </span>
                     <CaseStatusBadge status={c.status} size="sm" />
@@ -60,34 +67,44 @@ export default function CaseDetailPage({
                   <h1 className="text-2xl font-serif text-white font-normal">{c.title}</h1>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-[10px] font-mono text-[#5E616E] uppercase">Assigned</div>
-                    <div className="font-mono text-xs text-white mt-0.5">
-                      {c.owner || "Unassigned"}
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="bg-[#12141A] p-2.5 rounded-lg border border-white/[0.06]">
+                    <div className="text-[10px] text-[#777A88] uppercase">Assigned Analyst</div>
+                    <div className="text-white mt-0.5 font-semibold flex items-center gap-1">
+                      <User className="h-3 w-3 text-[#CC9166]" />
+                      <span>{c.owner || "Unassigned"}</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#12141A] p-2.5 rounded-lg border border-white/[0.06]">
+                    <div className="text-[10px] text-[#777A88] uppercase">Created Date</div>
+                    <div className="text-white mt-0.5 flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-[#777A88]" />
+                      <span>{c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN") : "—"}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: Details & Investigations (8 Cols) */}
-              <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Details & Linked Investigations (8 Cols) */}
+              <div className="lg:col-span-7 space-y-6">
                 {/* Notes & Summary */}
-                <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-5 space-y-2">
-                  <div className="text-[10px] font-mono uppercase text-[#777A88] tracking-wider font-semibold">
-                    Case Summary & Notes
+                <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-5 space-y-2 shadow-xl backdrop-blur-xl">
+                  <div className="text-[10px] font-mono uppercase text-[#CC9166] tracking-widest font-semibold flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>CASE SUMMARY & TRIAGE NOTES</span>
                   </div>
-                  <p className="text-xs text-[#E2E3E9] leading-relaxed">
-                    {c.notes || "No initial notes provided."}
+                  <p className="text-xs text-[#E2E3E9] leading-relaxed bg-[#12141A] p-3 rounded-lg border border-white/[0.04]">
+                    {c.notes || "No initial notes recorded for this case."}
                   </p>
                 </div>
 
                 {/* Linked Investigations */}
-                <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-5 space-y-3">
-                  <div className="text-[10px] font-mono uppercase text-[#CC9166] tracking-wider font-semibold">
-                    Linked Investigations ({c.investigation_ids?.length || 0})
+                <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-5 space-y-3.5 shadow-xl backdrop-blur-xl">
+                  <div className="text-[10px] font-mono uppercase text-[#CC9166] tracking-widest font-semibold flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>LINKED INVESTIGATIONS ({c.investigation_ids?.length || 0})</span>
                   </div>
 
                   {c.investigation_ids?.length === 0 ? (
@@ -99,19 +116,19 @@ export default function CaseDetailPage({
                         return (
                           <div
                             key={invId}
-                            className="p-3 bg-[#0D0E12] border border-[#1C1D22] rounded flex items-center justify-between text-xs"
+                            className="p-3.5 bg-[#12141A] border border-white/[0.06] hover:border-white/[0.12] rounded-lg flex items-center justify-between text-xs transition-all"
                           >
-                            <div>
-                              <div className="font-mono text-[#E2E3E9] font-semibold">{invId}</div>
-                              <div className="text-[10px] font-mono text-[#5E616E]">
-                                Target Transaction: {txId}
+                            <div className="space-y-0.5">
+                              <div className="font-mono text-[#CC9166] font-semibold">{invId}</div>
+                              <div className="text-[10px] font-mono text-[#777A88]">
+                                Target Transaction: <span className="text-[#E2E3E9]">{txId}</span>
                               </div>
                             </div>
                             <Link
                               href={`/investigate?tx=${txId}&case_id=${c.id}`}
-                              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-mono text-[#CC9166] hover:text-white bg-[#121317] border border-[#1C1D22] hover:border-[#CC9166]/40 rounded transition-colors"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-mono text-[#CC9166] hover:text-white bg-[#181A22] border border-[#CC9166]/40 hover:border-[#CC9166] rounded-lg transition-all"
                             >
-                              <span>Open in Workbench</span>
+                              <span>Open Workbench</span>
                               <ArrowUpRight className="h-3 w-3" />
                             </Link>
                           </div>
@@ -122,8 +139,8 @@ export default function CaseDetailPage({
                 </div>
               </div>
 
-              {/* Right Column: Workflow Actions (4 Cols) */}
-              <div className="lg:col-span-4 space-y-6">
+              {/* Right Column: Workflow Actions (5 Cols) */}
+              <div className="lg:col-span-5 space-y-6">
                 <CaseActionToolbar
                   caseData={c}
                   onCaseUpdated={() => caseData.refetch()}

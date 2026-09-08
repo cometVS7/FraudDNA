@@ -15,15 +15,15 @@ interface CaseTableProps {
 export function CaseTable({ cases, loading = false, onSelectCase }: CaseTableProps) {
   if (loading) {
     return (
-      <div className="border border-[#1C1D22] rounded-lg overflow-hidden bg-[#040406]">
-        <div className="p-8 text-center text-xs text-[#777A88]">Loading case queue...</div>
+      <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-[#0A0C10]/95 p-8 text-center text-xs text-[#777A88]">
+        Loading case queue...
       </div>
     );
   }
 
   if (cases.length === 0) {
     return (
-      <div className="border border-[#1C1D22] rounded-lg overflow-hidden bg-[#040406] p-12 text-center">
+      <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-[#0A0C10]/95 p-12 text-center shadow-xl">
         <FileText className="h-8 w-8 text-[#5E616E] mx-auto mb-3" />
         <h3 className="text-sm font-serif text-white">No Cases Found</h3>
         <p className="text-xs text-[#777A88] mt-1">
@@ -34,10 +34,10 @@ export function CaseTable({ cases, loading = false, onSelectCase }: CaseTablePro
   }
 
   return (
-    <div className="border border-[#1C1D22] rounded-lg overflow-hidden bg-[#040406] shadow-xl">
+    <div className="border border-white/[0.08] rounded-xl overflow-hidden bg-[#0A0C10]/95 shadow-xl backdrop-blur-xl">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs font-sans">
-          <thead className="bg-[#08080A] text-[#777A88] uppercase text-[10px] font-mono tracking-wider border-b border-[#1C1D22]">
+          <thead className="bg-[#0E1017]/80 text-[#777A88] uppercase text-[10px] font-mono tracking-wider border-b border-white/[0.06]">
             <tr>
               <th className="py-3 px-4">Case ID</th>
               <th className="py-3 px-4">Title</th>
@@ -49,7 +49,7 @@ export function CaseTable({ cases, loading = false, onSelectCase }: CaseTablePro
               <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1C1D22]/60">
+          <tbody className="divide-y divide-white/[0.04]">
             {cases.map((c) => {
               const primaryTx = c.investigation_ids?.[0]?.replace(/^inv_/, "") || "";
               const workbenchHref = primaryTx
@@ -60,13 +60,23 @@ export function CaseTable({ cases, loading = false, onSelectCase }: CaseTablePro
                 <tr
                   key={c.id}
                   onClick={() => onSelectCase && onSelectCase(c)}
-                  className="hover:bg-[#121317]/80 transition-colors group cursor-pointer"
+                  className="hover:bg-[#12141A]/80 transition-colors group cursor-pointer"
                 >
                   <td className="py-3 px-4 font-mono text-[#CC9166] font-semibold text-[11px]">
-                    {c.id}
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="hover:underline"
+                    >
+                      {c.id}
+                    </Link>
                   </td>
                   <td className="py-3 px-4 text-[#E2E3E9] font-medium max-w-xs truncate">
-                    {c.title}
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="hover:text-white"
+                    >
+                      {c.title}
+                    </Link>
                   </td>
                   <td className="py-3 px-4">
                     <CaseStatusBadge status={c.status} />
@@ -93,9 +103,9 @@ export function CaseTable({ cases, loading = false, onSelectCase }: CaseTablePro
                     <Link
                       href={workbenchHref}
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono text-[#CC9166] hover:text-white bg-[#1C1D22] hover:bg-[#CC9166]/20 border border-[#2E3038] rounded transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono text-[#CC9166] hover:text-white bg-[#14161F] hover:bg-[#CC9166]/20 border border-white/[0.08] hover:border-[#CC9166]/50 rounded-lg transition-all"
                     >
-                      <span>Investigate</span>
+                      <span>Workbench</span>
                       <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </td>

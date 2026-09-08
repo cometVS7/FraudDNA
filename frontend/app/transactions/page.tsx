@@ -20,6 +20,7 @@ import {
   ChevronRight,
   ArrowUpDown,
   ExternalLink,
+  ListOrdered,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -86,18 +87,19 @@ export default function TransactionsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Editorial Header */}
-        <div className="border-b border-[#1C1D22] pb-5">
+        {/* Header */}
+        <div className="border-b border-white/[0.06] pb-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="text-[11px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold">
-                Transaction Ledger
+              <div className="text-[10px] font-mono tracking-[0.2em] text-[#CC9166] uppercase font-semibold flex items-center gap-1.5">
+                <ListOrdered className="h-3.5 w-3.5" />
+                <span>TRANSACTION INTELLIGENCE</span>
               </div>
-              <h1 className="text-3xl font-serif tracking-tight text-white font-normal mt-1">
-                Transaction Intelligence
+              <h1 className="text-2xl sm:text-3xl font-serif tracking-tight text-white font-normal mt-1">
+                Transaction Ledger
               </h1>
               <p className="text-xs text-[#9194A1] font-sans mt-1">
-                High-density forensic ledger with risk scores, network clusters, and policy routing.
+                High-density forensic ledger with risk scores, network clusters, and deterministic policy gates.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -112,7 +114,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Filter Controls Bar */}
-        <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-xl backdrop-blur-xl">
           {/* Search */}
           <div className="relative flex-1 min-w-[240px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5E616E]" />
@@ -124,13 +126,13 @@ export default function TransactionsPage() {
                 setSearch(e.target.value);
                 setPage(0);
               }}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#121317] border border-[#1C1D22] rounded-md text-[#E2E3E9] placeholder-[#5E616E] font-mono focus:outline-none focus:border-[#CC9166] transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#12141A] border border-white/[0.08] rounded-lg text-[#E2E3E9] placeholder-[#5E616E] font-mono focus:outline-none focus:border-[#CC9166] transition-colors"
             />
           </div>
 
           {/* Risk Filters & Toggles */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 bg-[#121317] p-1 rounded-md border border-[#1C1D22]">
+            <div className="inline-flex items-center gap-1 bg-[#12141A] p-1 rounded-lg border border-white/[0.08]">
               {RISK_LEVELS.map((level) => (
                 <button
                   key={level.key}
@@ -138,9 +140,9 @@ export default function TransactionsPage() {
                     setRiskFilter(level.key);
                     setPage(0);
                   }}
-                  className={`px-2.5 py-1 text-[11px] font-mono rounded transition-colors ${
+                  className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors ${
                     riskFilter === level.key
-                      ? "bg-[#1C1D22] text-[#CC9166] font-medium"
+                      ? "bg-[#1C1D24] text-[#CC9166] font-semibold shadow-xs"
                       : "text-[#777A88] hover:text-[#E2E3E9]"
                   }`}
                 >
@@ -154,10 +156,10 @@ export default function TransactionsPage() {
                 setSuspiciousOnly((v) => !v);
                 setPage(0);
               }}
-              className={`px-3 py-1.5 text-xs font-mono rounded-md border transition-all ${
+              className={`px-3 py-1.5 text-xs font-mono rounded-lg border transition-all ${
                 suspiciousOnly
-                  ? "bg-[#CC9166]/10 border-[#CC9166] text-[#CC9166]"
-                  : "bg-[#121317] border-[#1C1D22] text-[#777A88] hover:text-[#E2E3E9]"
+                  ? "bg-[#CC9166]/15 border-[#CC9166] text-[#CC9166] font-semibold"
+                  : "bg-[#12141A] border-white/[0.08] text-[#777A88] hover:text-[#E2E3E9]"
               }`}
             >
               Suspicious Only
@@ -190,11 +192,11 @@ export default function TransactionsPage() {
         )}
 
         {data.status === "success" && data.data.transactions.length > 0 && (
-          <div className="bg-[#040406] border border-[#1C1D22] rounded-lg overflow-hidden">
+          <div className="bg-[#0A0C10]/95 border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl backdrop-blur-xl">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse font-sans">
                 <thead>
-                  <tr className="border-b border-[#1C1D22] bg-[#08080A] text-[#5E616E] font-mono text-[10px] uppercase tracking-wider">
+                  <tr className="border-b border-white/[0.06] bg-[#0E1017]/80 text-[#777A88] font-mono text-[10px] uppercase tracking-wider">
                     <th
                       className="py-3 px-4 cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort("transaction_id")}
@@ -225,23 +227,23 @@ export default function TransactionsPage() {
                       </div>
                     </th>
                     <th className="py-3 px-4">CLUSTER</th>
-                    <th className="py-3 px-4 text-center">DECISION</th>
+                    <th className="py-3 px-4 text-center">POLICY GATE</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1C1D22]/60">
+                <tbody className="divide-y divide-white/[0.04]">
                   {data.data.transactions.map((tx) => {
                     const projected = getProjectedDecision(tx.risk_score, tx.is_fraud);
                     return (
                       <tr
                         key={tx.transaction_id}
-                        className="group hover:bg-[#121317]/50 transition-colors"
+                        className="group hover:bg-[#12141A]/80 transition-colors"
                       >
                         <td className="py-2.5 px-4">
                           <Link
                             href={`/investigate?tx=${tx.transaction_id}`}
                             className="font-mono text-xs text-white group-hover:text-[#CC9166] transition-colors flex items-center gap-1.5"
                           >
-                            <span>{tx.transaction_id}</span>
+                            <span className="font-semibold">{tx.transaction_id}</span>
                             <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 text-[#CC9166] transition-opacity" />
                           </Link>
                           <div className="text-[10px] font-mono text-[#5E616E]">
@@ -263,7 +265,7 @@ export default function TransactionsPage() {
                         </td>
 
                         <td className="py-2.5 px-4 font-mono text-xs text-[#777A88]">
-                          {tx.device_id.slice(0, 10)}
+                          {tx.device_id.slice(0, 12)}
                         </td>
 
                         <td className="py-2.5 px-4 text-center">
@@ -293,9 +295,9 @@ export default function TransactionsPage() {
                             <DecisionBadge action={projected} size="xs" />
                             <Link
                               href={`/investigate?tx=${tx.transaction_id}`}
-                              className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#121317] border border-[#1C1D22] text-[#9194A1] hover:text-white hover:border-[#CC9166] transition-colors"
+                              className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-[#12141A] border border-white/[0.08] text-[#9194A1] hover:text-white hover:border-[#CC9166] transition-colors"
                             >
-                              Audit
+                              Investigate
                             </Link>
                           </div>
                         </td>
@@ -307,8 +309,8 @@ export default function TransactionsPage() {
             </div>
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#1C1D22] bg-[#08080A]">
-              <p className="text-[11px] font-mono text-[#5E616E]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06] bg-[#0E1017]/80">
+              <p className="text-[11px] font-mono text-[#777A88]">
                 Showing {page * limit + 1}–
                 {Math.min((page + 1) * limit, data.data.total)} of{" "}
                 {data.data.total.toLocaleString()} transactions
@@ -317,7 +319,7 @@ export default function TransactionsPage() {
                 <button
                   disabled={page === 0}
                   onClick={() => setPage((p) => p - 1)}
-                  className="p-1.5 rounded bg-[#121317] border border-[#1C1D22] text-[#9194A1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-md bg-[#12141A] border border-white/[0.08] text-[#9194A1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   aria-label="Previous Page"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -328,7 +330,7 @@ export default function TransactionsPage() {
                 <button
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage((p) => p + 1)}
-                  className="p-1.5 rounded bg-[#121317] border border-[#1C1D22] text-[#9194A1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded-md bg-[#12141A] border border-white/[0.08] text-[#9194A1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   aria-label="Next Page"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
