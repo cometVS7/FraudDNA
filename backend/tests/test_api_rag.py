@@ -21,7 +21,7 @@ async def test_api_rag_status() -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] in ("healthy", "degraded")
-    assert data["mode"] in ("persistent", "degraded")
+    assert data["mode"] in ("normal", "degraded")
     assert data["vector_store"] in ("postgresql_pgvector", "in_memory_fallback")
     assert data["documents_count"] >= 8
     assert data["chunks_count"] > 0
