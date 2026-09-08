@@ -35,11 +35,8 @@ import {
   ArrowRight,
   ShieldAlert,
   Search,
-  CheckCircle2,
   Shield,
   Sparkles,
-  Layers,
-  Fingerprint,
 } from "lucide-react";
 import {
   ResponsiveContainer,

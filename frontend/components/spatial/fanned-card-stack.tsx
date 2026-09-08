@@ -8,12 +8,6 @@ import {
   Cpu,
   ShieldCheck,
   ArrowRight,
-  ExternalLink,
-  CheckCircle2,
-  AlertTriangle,
-  Flame,
-  Fingerprint,
-  Lock,
 } from "lucide-react";
 
 interface CardData {

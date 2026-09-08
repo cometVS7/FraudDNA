@@ -4,20 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Share2,
-  ShieldCheck,
-  ShieldAlert,
-  Cpu,
-  BookOpen,
-  CheckCircle2,
   Lock,
   ArrowRight,
   Fingerprint,
-  TrendingUp,
-  AlertTriangle,
-  FileText,
   Sliders,
   Sparkles,
-  Search,
 } from "lucide-react";
 import { MagneticButton } from "../design-system/magnetic-button";
 
@@ -432,7 +423,7 @@ export function SectionGroundedEvidence() {
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              "Any transaction showing automated velocity spikes or hardware identifier re-use across unrelated customer profiles requires mandatory enhanced due diligence (EDD)."
+              &ldquo;Any transaction showing automated velocity spikes or hardware identifier re-use across unrelated customer profiles requires mandatory enhanced due diligence (EDD).&rdquo;
             </p>
           </div>
 
@@ -446,7 +437,7 @@ export function SectionGroundedEvidence() {
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              "Detection of multiple payment attempts from the same hardware UUID within a 15-minute window indicates coordinated bot-driven or mule-account drain attempts."
+              &ldquo;Detection of multiple payment attempts from the same hardware UUID within a 15-minute window indicates coordinated bot-driven or mule-account drain attempts.&rdquo;
             </p>
           </div>
         </div>

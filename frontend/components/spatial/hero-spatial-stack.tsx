@@ -1,25 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
   ArrowRight,
   Layers,
-  Cpu,
   Share2,
-  CheckCircle2,
-  AlertTriangle,
   Flame,
   Fingerprint,
-  Zap,
 } from "lucide-react";
 
-interface HeroSpatialStackProps {
-  onSelectTx?: (txId: string) => void;
-}
-
-export function HeroSpatialStack({ onSelectTx }: HeroSpatialStackProps) {
+export function HeroSpatialStack() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rotateX: 20, rotateY: -15, isHovered: false });
   const [exploded, setExploded] = useState(false);

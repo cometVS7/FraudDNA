@@ -9,7 +9,6 @@ Create Date: 2026-09-05 07:50:00.000000
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-
 from alembic import op
 
 revision: str = "0001_rag_tables"

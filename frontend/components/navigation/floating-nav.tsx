@@ -10,21 +10,11 @@ import {
   ArrowRight,
   Menu,
   X,
-  Sparkles,
-  Layers,
-  Search,
-  Share2,
-  Briefcase,
-  FileCheck,
 } from "lucide-react";
 import { useTheme } from "../design-system/theme-provider";
 import { MagneticButton } from "../design-system/magnetic-button";
 
-interface FloatingNavProps {
-  currentSection?: string;
-}
-
-export function FloatingNav({ currentSection }: FloatingNavProps) {
+export function FloatingNav() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
