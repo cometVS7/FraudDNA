@@ -108,9 +108,9 @@ Fully integrated Next.js application backed by actual live backend endpoints:
   - `docker-compose.yml` updated with correct build context
   - GitHub Actions CI updated with ESLint, TypeScript, and full backend test gates
 - **Final Quality Gate**:
-  - 117/117 backend tests passing (pytest)
+  - 117/117 backend tests passing at Phase 7 completion (pytest; current count: 133 after subsequent UI polish commits)
   - Ruff linter & format: 0 errors
   - Mypy static typing: 0 errors across 54 source files
   - ESLint: 0 errors
   - TypeScript: 0 type errors
-  - Next.js production build: 9/9 static routes compiled cleanly
+  - Next.js production build: 7/7 static routes compiled cleanly

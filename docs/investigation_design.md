@@ -195,7 +195,7 @@ Retrieves a previously computed investigation by ID. Returns HTTP 404 if not fou
 
 ---
 
-## 6. Boundary with Future AI Agent (Phase 5)
+## 6. Boundary with AI Agent (Phase 5)
 
 - **Phase 3 (This Phase)**: Deterministic, factual risk aggregation. Emits structured evidence objects grounded strictly in ML and graph outputs.
-- **Phase 5 (Future LangGraph Agent)**: Will consume this API as a tool to reason over evidence, synthesize narrative explanations, and coordinate policy checks. Phase 3 guarantees clean, typed inputs for the agent without hallucinated data.
+- **Phase 5 (AI Investigation Agent — Implemented)**: The LangGraph agent consumes this API as a tool to reason over evidence, synthesize narrative explanations, and coordinate policy checks. Phase 3 guarantees clean, typed inputs for the agent without hallucinated data.
