@@ -73,7 +73,7 @@ When analyzed individually, each transaction appears legitimate.
 | **Agentic AI** | LangGraph (StateGraph, bounded execution, 7 read-only investigation tools) |
 | **RAG & Search** | pgvector / PostgreSQL 16 (with deterministic in-memory vector fallback) |
 | **Frontend** | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS |
-| **Testing & Quality** | pytest (117 tests), Ruff, Mypy, ESLint, GitHub Actions CI |
+| **Testing & Quality** | pytest (133 tests), Ruff, Mypy, ESLint, GitHub Actions CI |
 
 ---
 
@@ -109,7 +109,7 @@ When analyzed individually, each transaction appears legitimate.
 FraudDNA is engineered strictly as a **defense-only** system:
 - **Zero Financial Side Effects**: The LLM agent has **zero write permissions**. It cannot approve, decline, block, or trigger payouts.
 - **Deterministic Financial Decisions**: Every financial action (`ALLOW`, `REVIEW`, `HOLD`) is executed strictly by the Python `PolicyEngine` based on risk score thresholds and cluster flags.
-- **Bounded Agent Execution**: The LangGraph agent runs with an enforced step ceiling (default: 6 steps, max: 10). It accesses only 7 allowlisted read-only tools.
+- **Bounded Agent Execution**: The LangGraph agent runs with an enforced step ceiling (default: 8 steps). It accesses only 7 allowlisted read-only tools.
 - **Deterministic Offline Fallback**: If an external LLM API key is not configured or an AI provider times out, the system automatically falls back to an offline deterministic reasoning engine without breaking the pipeline.
 - **RAG Degradation Safety**: If pgvector/PostgreSQL is unreachable, the system falls back to in-memory cosine similarity and documents the degraded state in the audit trail without fabricating citations.
 
@@ -194,7 +194,7 @@ mypy backend/app
 cd frontend
 npm run lint          # ESLint
 npm run type-check    # TypeScript strict check
-npm run build         # Next.js production build (all 9 routes)
+npm run build         # Next.js production build (all 7 routes)
 ```
 
 ---

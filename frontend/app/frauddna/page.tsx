@@ -28,8 +28,8 @@ import {
 
 function FraudDNAContent() {
   const searchParams = useSearchParams();
-  const initialCluster = searchParams.get("cluster") || null;
-  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(initialCluster);
+  const clusterParam = searchParams.get("cluster");
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(clusterParam || null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
   const clusters = useAsync<ClustersResponse>(
@@ -39,12 +39,14 @@ function FraudDNAContent() {
 
   const clustersData = clusters.status === "success" ? clusters.data : null;
 
-  // Set default selected cluster if none selected
+  // Sync cluster query param or set default
   useEffect(() => {
-    if (!selectedClusterId && clustersData && clustersData.clusters.length > 0) {
+    if (clusterParam && clusterParam !== selectedClusterId) {
+      setSelectedClusterId(clusterParam);
+    } else if (!selectedClusterId && clustersData && clustersData.clusters.length > 0) {
       setSelectedClusterId(clustersData.clusters[0].cluster_id);
     }
-  }, [selectedClusterId, clustersData]);
+  }, [clusterParam, selectedClusterId, clustersData]);
 
   const graphFetcher = useCallback(() => {
     if (!selectedClusterId) return Promise.resolve(null);

@@ -76,9 +76,9 @@ export default function TransactionsPage() {
     setPage(0);
   }
 
-  // Determine policy projection based on score
-  const getProjectedDecision = (score: number, isSuspicious: boolean) => {
-    if (score >= 0.85 || isSuspicious) return "HOLD";
+  // Determine policy projection based on model risk score and cluster context
+  const getProjectedDecision = (score: number, hasCluster: boolean) => {
+    if (score >= 0.90 || (score >= 0.70 && hasCluster)) return "HOLD";
     if (score >= 0.37) return "REVIEW";
     return "ALLOW";
   };
@@ -230,7 +230,7 @@ export default function TransactionsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1C1D22]/60">
                   {data.data.transactions.map((tx) => {
-                    const projected = getProjectedDecision(tx.risk_score, tx.is_fraud);
+                    const projected = getProjectedDecision(tx.risk_score, Boolean(tx.cluster_id));
                     return (
                       <tr
                         key={tx.transaction_id}

@@ -8,7 +8,7 @@ Prioritize a reliable vertical slice over distributed-system complexity.
 ## 2. Stack
 
 ### Frontend
-- Next.js 15
+- Next.js 16
 - TypeScript
 - Tailwind CSS
 - shadcn/ui
@@ -100,15 +100,14 @@ FraudDNA/
 ├── docs/
 ├── .github/
 │   └── workflows/
-├── artifacts/
-│   ├── PRD.md
-│   ├── Architecture.md
-│   ├── Rules.md
-│   ├── Phases.md
-│   └── Design.md
 ├── docker-compose.yml
 ├── Dockerfile
 ├── README.md
+├── PRD.md
+├── Architecture.md
+├── Rules.md
+├── Phases.md
+├── Design.md
 └── .env.example
 ```
 
@@ -174,17 +173,42 @@ Relationships include:
 9. Generate SHAP explanations.
 
 ## 9. API
-- POST /api/v1/transactions
+### Health
+- GET /api/v1/health
+
+### Dashboard & Transactions
+- GET /api/v1/overview
+- GET /api/v1/transactions
 - GET /api/v1/transactions/{id}
-- GET /api/v1/risk/{id}
+- GET /api/v1/evaluation
+- GET /api/v1/audit
+
+### FraudDNA Graph & Clusters
 - GET /api/v1/clusters
 - GET /api/v1/clusters/{id}
+
+### Risk Investigation (ML + SHAP + Graph)
 - POST /api/v1/investigations
-- GET /api/v1/investigations/{id}
-- POST /api/v1/simulations
-- GET /api/v1/evaluation
-- GET /api/v1/audit/{id}
-- GET /api/v1/health
+- GET /api/v1/investigations/{investigation_id}
+
+### Policy Engine
+- POST /api/v1/decisions/evaluate
+- GET /api/v1/decisions/{transaction_id}
+
+### AI Agent (LangGraph)
+- POST /api/v1/agent/investigate
+- GET /api/v1/agent/investigate/{investigation_id}
+
+### RAG Knowledge
+- POST /api/v1/rag/ingest
+- POST /api/v1/rag/search
+- GET /api/v1/rag/documents
+- GET /api/v1/rag/documents/{id}
+- GET /api/v1/rag/status
+
+### Risk Simulation
+- POST /api/v1/simulations/run
+- POST /api/v1/simulations/compare
 
 ## 10. Security
 - Secrets through environment variables.
