@@ -71,13 +71,13 @@ export default function SpatialOverviewPage() {
       {/* ========================================================
           HERO SPATIAL SECTION
           ======================================================== */}
-      <section className="relative pt-28 sm:pt-36 pb-16 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
+      <section className="relative pt-28 sm:pt-36 pb-14 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
         {/* Ambient Top Glows & Cyber Grid */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-cyan-500/15 via-blue-600/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-20 inset-x-0 h-96 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25 pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[460px] bg-gradient-to-b from-cyan-500/12 via-blue-600/8 to-transparent rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute top-16 inset-x-0 h-96 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
 
         {/* Hero Kicker Pill */}
-        <div className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/25 text-xs font-mono text-cyan-300 mb-6 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+        <div className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-xs font-mono text-cyan-300 mb-6 shadow-[0_0_16px_rgba(0,229,255,0.15)]">
           <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
           <span>RAZORPAY 2026 • AI RISK MANAGER • TRACK 02</span>
         </div>
@@ -92,9 +92,8 @@ export default function SpatialOverviewPage() {
 
         {/* Subtitle */}
         <p className="relative mt-6 text-base sm:text-lg text-slate-400 max-w-3xl font-sans leading-relaxed">
-          FraudDNA does not merely ask <em>“Is this payment suspicious?”</em> It connects
-          invisible infrastructure across devices, accounts, and network topologies to expose
-          coordinated syndicates before settlement.
+          FraudDNA sees relationships humans cannot see. We uncover hidden syndicate topology,
+          explain risk attributions, and enforce deterministic policy controls before funds leave the ecosystem.
         </p>
 
         {/* Hero Action CTAs */}
@@ -105,7 +104,7 @@ export default function SpatialOverviewPage() {
             size="lg"
             icon={<ArrowRight className="h-4 w-4" />}
           >
-            Launch Workbench (tx_0001991)
+            Launch Investigation (tx_0001991)
           </MagneticButton>
 
           <MagneticButton
@@ -161,29 +160,29 @@ export default function SpatialOverviewPage() {
       {/* ========================================================
           LIVE INTELLIGENCE RADAR DASHBOARD
           ======================================================== */}
-      <section id="overview" className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-white/10">
+      <section id="overview" className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 border-t border-white/[0.08]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
-            <div className="text-[11px] font-mono tracking-[0.2em] text-cyan-400 uppercase font-semibold">
+            <div className="text-[11px] font-mono tracking-[0.2em] text-cyan-300 uppercase font-semibold">
               Live Operating Radar
             </div>
             <h2 className="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-1">
               Production Risk & Network Telemetry
             </h2>
             <p className="text-sm text-slate-400 max-w-2xl mt-1">
-              Real-time feed connecting active transactions, cluster risks, and agent investigations.
+              Live telemetry feed connecting active transactions, cluster risks, and agent investigations.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <DataLabel label="Synthetic Dataset" />
-            <div className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-xs font-mono text-slate-400">
-              Seed #42
+            <DataLabel label="Live Telemetry" />
+            <div className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-slate-400">
+              Synthetic Seed #42
             </div>
           </div>
         </div>
 
         {overview.status === "loading" && (
-          <LoadingState message="Querying live fraud intelligence kernel..." />
+          <LoadingState message="Connecting to live fraud intelligence kernel..." />
         )}
         {overview.status === "error" && (
           <ErrorState
@@ -200,7 +199,7 @@ export default function SpatialOverviewPage() {
               <MetricCard
                 label="Transactions"
                 value={formatNumber(overview.data.total_transactions)}
-                sublabel="Total processed volume"
+                sublabel="Total evaluated volume"
                 icon={<TrendingUp className="h-4 w-4" />}
               />
               <MetricCard
@@ -261,7 +260,7 @@ export default function SpatialOverviewPage() {
                     {/* Stacked Risk Spectrum Bar */}
                     <div className="space-y-2">
                       <div
-                        className="relative w-full h-8 bg-black/50 rounded-xl p-1 border border-white/10 flex gap-1 items-center overflow-hidden"
+                        className="relative w-full h-8 bg-black/50 rounded-xl p-1 border border-white/[0.08] flex gap-1 items-center overflow-hidden"
                         role="progressbar"
                         aria-label="Risk score distribution across transactions"
                       >
@@ -304,26 +303,26 @@ export default function SpatialOverviewPage() {
                     </div>
 
                     {/* Numerical Tiers */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/10">
-                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/[0.08]">
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                         <span className="text-[10px] font-mono text-slate-400 uppercase">LOW</span>
                         <div className="text-base font-mono font-bold text-emerald-400 mt-1">
                           {formatNumber(overview.data.risk_distribution.low)}
                         </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                         <span className="text-[10px] font-mono text-slate-400 uppercase">REVIEW</span>
                         <div className="text-base font-mono font-bold text-amber-400 mt-1">
                           {formatNumber(overview.data.risk_distribution.medium)}
                         </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                         <span className="text-[10px] font-mono text-slate-400 uppercase">HIGH</span>
                         <div className="text-base font-mono font-bold text-orange-400 mt-1">
                           {formatNumber(overview.data.risk_distribution.high)}
                         </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
                         <span className="text-[10px] font-mono text-slate-400 uppercase">CRITICAL</span>
                         <div className="text-base font-mono font-bold text-rose-400 mt-1">
                           {formatNumber(overview.data.risk_distribution.critical)}
@@ -379,7 +378,7 @@ export default function SpatialOverviewPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="space-y-2 pt-4 border-t border-white/10 text-xs">
+                  <div className="space-y-2 pt-4 border-t border-white/[0.08] text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Legitimate Traffic</span>
                       <span className="font-mono text-slate-200">
@@ -392,9 +391,9 @@ export default function SpatialOverviewPage() {
                         {formatNumber(overview.data.fraud_count)} ({formatPct(overview.data.fraud_rate)})
                       </span>
                     </div>
-                    <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                    <div className="flex items-center justify-between pt-1 border-t border-white/[0.08]">
                       <span className="text-slate-400">Direct Financial Loss</span>
-                      <span className="font-mono font-bold text-cyan-400">
+                      <span className="font-mono font-bold text-cyan-300">
                         {formatINR(overview.data.fraud_exposure)}
                       </span>
                     </div>
@@ -412,7 +411,7 @@ export default function SpatialOverviewPage() {
                 action={
                   <Link
                     href="/transactions"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400 hover:text-white"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-300 hover:text-white"
                   >
                     <span>Ledger</span>
                     <ArrowRight className="h-3 w-3" />
@@ -421,7 +420,7 @@ export default function SpatialOverviewPage() {
               >
                 {recentRiskTx.status === "loading" && <LoadingState message="Loading high-risk events..." />}
                 {recentRiskTx.status === "success" && (
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-white/[0.04]">
                     {recentRiskTx.data.transactions.map((tx) => (
                       <div
                         key={tx.transaction_id}
@@ -431,7 +430,7 @@ export default function SpatialOverviewPage() {
                           <div className="flex items-center gap-2">
                             <Link
                               href={`/investigate?tx=${tx.transaction_id}`}
-                              className="font-mono text-xs text-white group-hover:text-cyan-400 transition-colors truncate font-semibold"
+                              className="font-mono text-xs text-white group-hover:text-cyan-300 transition-colors truncate font-semibold"
                             >
                               {tx.transaction_id}
                             </Link>
@@ -452,7 +451,7 @@ export default function SpatialOverviewPage() {
                           </div>
                           <Link
                             href={`/investigate?tx=${tx.transaction_id}`}
-                            className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-cyan-400/50 hover:text-cyan-300 text-slate-400 transition-colors"
+                            className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-cyan-400/40 hover:text-cyan-300 text-slate-400 transition-colors"
                             title={`Investigate ${tx.transaction_id}`}
                           >
                             <ArrowRight className="h-3.5 w-3.5" />
@@ -471,7 +470,7 @@ export default function SpatialOverviewPage() {
                 action={
                   <Link
                     href="/frauddna"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400 hover:text-white"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-300 hover:text-white"
                   >
                     <span>Full Graph</span>
                     <ArrowRight className="h-3 w-3" />
@@ -480,7 +479,7 @@ export default function SpatialOverviewPage() {
               >
                 {clusters.status === "loading" && <LoadingState message="Loading network clusters..." />}
                 {clusters.status === "success" && (
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-white/[0.04]">
                     {clusters.data.clusters.map((c) => (
                       <div
                         key={c.cluster_id}
@@ -490,7 +489,7 @@ export default function SpatialOverviewPage() {
                           <span className="font-mono text-xs text-white font-semibold">
                             {c.cluster_id}
                           </span>
-                          <span className="font-mono text-xs text-cyan-400 font-bold">
+                          <span className="font-mono text-xs text-cyan-300 font-bold">
                             {formatINR(c.suspicious_transaction_amount)}
                           </span>
                         </div>
@@ -515,7 +514,7 @@ export default function SpatialOverviewPage() {
                 action={
                   <Link
                     href="/investigate"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-400 hover:text-white"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-cyan-300 hover:text-white"
                   >
                     <span>Console</span>
                     <ArrowRight className="h-3 w-3" />
@@ -523,14 +522,14 @@ export default function SpatialOverviewPage() {
                 }
               >
                 <div className="space-y-4">
-                  <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/20 space-y-2">
+                  <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
                       <span className="text-xs font-mono font-bold text-white">
                         Bounded Read-Only Agent Active
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans">
                       Synthesizes multi-hop entity graphs, SHAP explanations, and regulatory
                       defense guidelines without any financial execution permissions.
                     </p>
@@ -539,10 +538,10 @@ export default function SpatialOverviewPage() {
                   <div className="pt-2">
                     <Link
                       href="/investigate?tx=tx_0001991"
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-bold text-xs hover:from-cyan-400 hover:to-blue-500 transition-all shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-[#06080E] font-bold text-xs hover:from-cyan-300 hover:to-blue-400 transition-all shadow-[0_4px_16px_rgba(0,229,255,0.25)]"
                     >
                       <Search className="h-4 w-4" />
-                      <span>Investigate Golden Case (tx_0001991)</span>
+                      <span>Launch Investigation (tx_0001991)</span>
                     </Link>
                   </div>
                 </div>
@@ -555,10 +554,10 @@ export default function SpatialOverviewPage() {
       {/* ========================================================
           CINEMATIC FOOTER
           ======================================================== */}
-      <footer className="w-full border-t border-white/10 bg-[#04060A] py-12 px-4 sm:px-6">
+      <footer className="w-full border-t border-white/[0.08] bg-[#04060A] py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center">
               <Shield className="h-4 w-4 text-cyan-400" />
             </div>
             <div>
@@ -572,16 +571,16 @@ export default function SpatialOverviewPage() {
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono text-slate-400">
-            <Link href="/cases" className="hover:text-cyan-400 transition-colors">
+            <Link href="/cases" className="hover:text-cyan-300 transition-colors">
               Case Queue
             </Link>
-            <Link href="/investigate" className="hover:text-cyan-400 transition-colors">
+            <Link href="/investigate" className="hover:text-cyan-300 transition-colors">
               Workbench
             </Link>
-            <Link href="/frauddna" className="hover:text-cyan-400 transition-colors">
+            <Link href="/frauddna" className="hover:text-cyan-300 transition-colors">
               Networks
             </Link>
-            <Link href="/audit" className="hover:text-cyan-400 transition-colors">
+            <Link href="/audit" className="hover:text-cyan-300 transition-colors">
               Audit
             </Link>
           </div>
