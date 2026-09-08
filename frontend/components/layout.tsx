@@ -51,7 +51,7 @@ export function Sidebar({
 
   const renderNavGroup = (title: string, items: NavItem[]) => (
     <div className="mb-6">
-      <div className="px-3 mb-2 text-[10px] font-mono tracking-[0.18em] text-[#5E616E] uppercase">
+      <div className="px-3 mb-2 text-[10px] font-mono tracking-[0.18em] text-slate-500 uppercase">
         {title}
       </div>
       <div className="space-y-0.5">
@@ -67,21 +67,21 @@ export function Sidebar({
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-all duration-150 ${
+              className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 ${
                 isActive
-                  ? "bg-[#121317] text-white shadow-sm"
-                  : "text-[#9194A1] hover:text-[#E2E3E9] hover:bg-[#121317]/60"
+                  ? "bg-white/[0.08] text-white shadow-xs border border-white/10"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
               }`}
             >
-              {/* Copper active indicator line */}
+              {/* Cyan active indicator line */}
               {isActive && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] bg-[#CC9166] rounded-r" />
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-cyan-400 rounded-r shadow-[0_0_8px_rgba(0,229,255,0.8)]" />
               )}
               <Icon
                 className={`h-3.5 w-3.5 flex-shrink-0 transition-colors ${
                   isActive
-                    ? "text-[#CC9166]"
-                    : "text-[#5E616E] group-hover:text-[#9194A1]"
+                    ? "text-cyan-400"
+                    : "text-slate-500 group-hover:text-slate-300"
                 }`}
               />
               <span className="tracking-tight">{item.label}</span>
@@ -94,29 +94,30 @@ export function Sidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 w-60 bg-[#040406] border-r border-[#1C1D22] flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-40 w-60 bg-[#06080E]/95 backdrop-blur-2xl border-r border-white/10 flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 ${
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}
     >
       {/* Brand Header */}
-      <div className="h-14 px-5 flex items-center justify-between border-b border-[#1C1D22]">
+      <div className="h-14 px-5 flex items-center justify-between border-b border-white/10">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="h-7 w-7 rounded-md bg-[#121317] border border-[#2E3038] flex items-center justify-center text-[#CC9166] group-hover:border-[#CC9166]/60 transition-colors">
+          <div className="h-7 w-7 rounded-full bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 group-hover:shadow-[0_0_12px_rgba(0,229,255,0.6)] transition-all">
             <Shield className="h-3.5 w-3.5" />
           </div>
           <div>
-            <div className="text-sm font-semibold tracking-tight text-[#E2E3E9] flex items-center gap-1.5">
-              <span>FraudDNA</span>
+            <div className="text-sm font-semibold tracking-tight text-white flex items-center gap-1">
+              <span>Fraud</span>
+              <span className="text-cyan-400">DNA</span>
             </div>
-            <div className="text-[9px] font-mono tracking-[0.14em] text-[#5E616E] leading-none uppercase">
-              Fraud Intelligence
+            <div className="text-[9px] font-mono tracking-[0.14em] text-slate-500 leading-none uppercase">
+              Spatial Intelligence
             </div>
           </div>
         </Link>
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden text-[#5E616E] hover:text-[#E2E3E9] p-1"
+            className="md:hidden text-slate-400 hover:text-white p-1"
             aria-label="Close navigation"
           >
             <X className="h-4 w-4" />
@@ -131,12 +132,12 @@ export function Sidebar({
       </nav>
 
       {/* Footer System Provenance */}
-      <div className="px-4 py-3.5 border-t border-[#1C1D22] bg-[#08080A]/60">
-        <div className="flex items-center justify-between text-[10px] font-mono text-[#5E616E]">
+      <div className="px-4 py-3.5 border-t border-white/10 bg-black/40">
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
           <span>RAZORPAY 2026</span>
-          <span className="text-[#AE9357]/80">DEFENSE ONLY</span>
+          <span className="text-emerald-400 font-bold">DEFENSE ONLY</span>
         </div>
-        <div className="mt-1 text-[9px] font-mono text-[#464853] truncate">
+        <div className="mt-1 text-[9px] font-mono text-slate-500 truncate">
           AI Risk Manager • Track 02
         </div>
       </div>
@@ -169,39 +170,45 @@ export function TopUtilityBar({ onMenuClick }: { onMenuClick?: () => void }) {
   }, []);
 
   return (
-    <header className="h-12 border-b border-[#1C1D22] bg-[#08080A]/90 backdrop-blur sticky top-0 z-20 flex items-center justify-between px-4 md:px-8">
+    <header className="h-12 border-b border-white/10 bg-[#06080E]/80 backdrop-blur-xl sticky top-0 z-20 flex items-center justify-between px-4 md:px-8">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="md:hidden text-[#777A88] hover:text-white p-1 rounded"
+          className="md:hidden text-slate-400 hover:text-white p-1 rounded"
           aria-label="Open navigation"
         >
           <Menu className="h-4 w-4" />
         </button>
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
-          <Database className="h-3 w-3 text-[#5E616E]" />
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+          <Database className="h-3 w-3 text-cyan-400" />
           <span>Synthetic Dataset</span>
         </span>
-        <span className="hidden sm:inline text-[#2E3038]">•</span>
-        <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
-          <Cpu className="h-3 w-3 text-[#5E616E]" />
+        <span className="hidden sm:inline text-slate-700">•</span>
+        <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+          <Cpu className="h-3 w-3 text-purple-400" />
           <span>Model {apiVersion}</span>
         </span>
-        <span className="hidden md:inline text-[#2E3038]">•</span>
-        <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-mono text-[#777A88]">
+        <span className="hidden md:inline text-slate-700">•</span>
+        <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
           <span>Agent: Bounded Read-Only</span>
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#121317] border border-[#1C1D22] text-[11px] font-mono text-[#9194A1]">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/"
+          className="hidden sm:inline-flex text-[11px] font-mono text-cyan-400 hover:text-cyan-300 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20"
+        >
+          Spatial View →
+        </Link>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-mono text-slate-300">
           <span
             className={`h-1.5 w-1.5 rounded-full ${
               apiHealth === "healthy"
-                ? "bg-[#8FAF9B] shadow-[0_0_6px_rgba(143,175,155,0.4)]"
+                ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"
                 : apiHealth === "checking"
-                ? "bg-[#C7A66B] animate-pulse"
-                : "bg-[#D05B5B]"
+                ? "bg-amber-400 animate-pulse"
+                : "bg-rose-500"
             }`}
           />
           <span className="capitalize">
@@ -221,7 +228,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#08080A] text-[#E2E3E9] selection:bg-[#CC9166]/30 selection:text-white">
+    <div className="min-h-screen bg-[#06080E] text-[#E2E3E9] selection:bg-cyan-500/30 selection:text-white">
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       {/* Backdrop for mobile */}
