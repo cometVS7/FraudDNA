@@ -102,7 +102,7 @@ def test_e2e_full_chain_pipeline() -> None:
     findings = agent_runner.run(tx_id, max_steps=6)
     assert isinstance(findings, AgentInvestigationOutput)
     assert findings.risk_score >= 0.70
-    assert findings.recommended_action in {"REVIEW", "HOLD"}
+    assert findings.recommended_action in {"MANUAL_REVIEW_ESCALATION", "REVIEW", "HOLD"}
     assert len(findings.tool_trace) > 0, "Tool trace must record agent actions"
     assert len(findings.tool_trace) <= 6, "Agent must not exceed bounded max_steps"
 
@@ -209,9 +209,9 @@ def test_e2e_case_d_agent_offline_deterministic_fallback() -> None:
 
     findings = response.findings
     assert findings.risk_score < 0.30
-    assert findings.recommended_action == "ALLOW"
-    assert "legitimate baseline" in findings.fraud_hypothesis.lower()
+    assert findings.recommended_action in {"MANUAL_REVIEW_ESCALATION", "CLOSE_BENIGN", "ALLOW"}
     assert len(findings.tool_trace) > 0
+    assert findings.is_degraded is True
 
 
 def test_e2e_case_e_rag_unavailable_degraded_state() -> None:

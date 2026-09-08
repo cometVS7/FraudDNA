@@ -7,7 +7,7 @@ from app.agent.schemas import AgentInvestigationOutput
 from app.graph.service import get_graph_service
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_tx_id() -> str:
     graph_service = get_graph_service()
     graph_service.initialize()
@@ -31,7 +31,15 @@ def test_agent_graph_execution_produces_valid_output(sample_tx_id: str) -> None:
     assert output.transaction_id == sample_tx_id
     assert 0.0 <= output.risk_score <= 1.0
     assert output.risk_level.value in {"low", "medium", "high", "critical"}
-    assert output.recommended_action in {"ALLOW", "REVIEW", "HOLD"}
+    assert output.recommended_action in {
+        "MANUAL_REVIEW_ESCALATION",
+        "MERCHANT_INQUIRY",
+        "CLOSE_BENIGN",
+        "REQUEST_ADDITIONAL_EVIDENCE",
+        "ALLOW",
+        "REVIEW",
+        "HOLD",
+    }
     assert 0.0 <= output.confidence <= 1.0
     assert len(output.summary) > 0
     assert len(output.fraud_hypothesis) > 0

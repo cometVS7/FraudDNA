@@ -35,14 +35,26 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Core Application Settings
     APP_NAME: str = "FraudDNA"
     APP_ENV: str = "development"
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "console"  # "console" for human-readable dev, "json" for production
     API_V1_PREFIX: str = "/api/v1"
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 8000
 
+    # V2 Engineering Feature Flags (Conservative defaults: preserve V1 behavior)
+    ENABLE_PERSISTENT_STORAGE: bool = False
+    V2_FEATURES_ENABLED: bool = False
+
+    # Security & Request Correlation
+    REQUEST_ID_HEADER: str = "X-Request-ID"
+    CORRELATION_ID_HEADER: str = "X-Correlation-ID"
+    SECRET_KEY: str = "insecure-dev-secret-key-change-in-production"
+
+    # CORS Settings
     CORS_ORIGINS: list[str] | str = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -91,12 +103,22 @@ class Settings(BaseSettings):
 
         return origins
 
+    # Database Configuration (PostgreSQL + pgvector)
     DATABASE_URL: str = (
         "postgresql+asyncpg://frauddna_user:frauddna_password@localhost:5432/frauddna_db"
     )
     DATABASE_URL_SYNC: str = (
         "postgresql://frauddna_user:frauddna_password@localhost:5432/frauddna_db"
     )
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT: float = 30.0
+
+    # ML & Feature Pipeline Settings
+    ML_MODELS_DIR: str = "ml/models"
+    ML_DATA_PATH: str = "ml/data/transactions.csv"
+    ML_FEATURE_COUNT: int = 18
+    ML_DEFAULT_THRESHOLD: float = 0.37
 
     # Agent Settings
     LLM_PROVIDER: str = "deterministic"
@@ -108,6 +130,54 @@ class Settings(BaseSettings):
 
     # Policy Engine Settings
     POLICY_VERSION: str = "2025.1"
+
+    @property
+    def is_production(self) -> bool:
+        """Check whether application is running in production mode."""
+        return self.APP_ENV.lower() in {"production", "prod"}
+
+    @property
+    def is_persistent_mode(self) -> bool:
+        """Check whether persistent database storage is active."""
+        return self.ENABLE_PERSISTENT_STORAGE or self.is_production
+
+    def validate_production_configuration(self) -> None:
+        """Explicitly validate production configuration security.
+
+        Raises ValueError if production mode contains insecure dev defaults.
+        """
+        if not self.is_production:
+            return
+
+        insecure_keys = {
+            "insecure-dev-secret-key-change-in-production",
+            "secret",
+            "changeme",
+            "development",
+            "admin",
+        }
+        if self.SECRET_KEY in insecure_keys or len(self.SECRET_KEY) < 32:
+            raise ValueError(
+                "CRITICAL SECURITY: Production mode requires a strong, cryptographically "
+                "secure SECRET_KEY (minimum 32 characters)."
+            )
+
+        if (
+            "frauddna_password" in self.DATABASE_URL
+            or "frauddna_password" in self.DATABASE_URL_SYNC
+        ):
+            raise ValueError(
+                "CRITICAL SECURITY: Production mode requires explicit production DATABASE_URL credentials; "
+                "default 'frauddna_password' is strictly forbidden."
+            )
+
+        cors_list = (
+            [self.CORS_ORIGINS] if isinstance(self.CORS_ORIGINS, str) else list(self.CORS_ORIGINS)
+        )
+        if "*" in cors_list:
+            raise ValueError(
+                "CRITICAL SECURITY: Wildcard CORS ('*') is strictly forbidden in production mode."
+            )
 
 
 settings = Settings()

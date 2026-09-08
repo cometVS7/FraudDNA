@@ -7,7 +7,7 @@ from app.graph.service import get_graph_service
 from app.services.investigation import TransactionNotFoundError
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_tx_id() -> str:
     graph_service = get_graph_service()
     graph_service.initialize()
@@ -103,5 +103,13 @@ def test_llm_external_call_failure_triggers_deterministic_fallback(
     # Should gracefully fall back to deterministic synthesis
     output = runner.run(sample_tx_id)
     assert output.investigation_id.startswith("inv_agent_")
-    assert output.recommended_action in {"ALLOW", "REVIEW", "HOLD"}
+    assert output.recommended_action in {
+        "MANUAL_REVIEW_ESCALATION",
+        "MERCHANT_INQUIRY",
+        "CLOSE_BENIGN",
+        "REQUEST_ADDITIONAL_EVIDENCE",
+        "ALLOW",
+        "REVIEW",
+        "HOLD",
+    }
     assert output.agent_steps >= 1

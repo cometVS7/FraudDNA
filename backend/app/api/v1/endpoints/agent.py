@@ -4,12 +4,14 @@ Exposes REST endpoints to trigger and retrieve bounded LangGraph investigations.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from app.agent.schemas import (
     AgentInvestigationRequest,
     AgentInvestigationResponse,
 )
 from app.agent.service import AgentInvestigationService, get_agent_service
+from app.core.database import get_sync_db
 from app.services.investigation import TransactionNotFoundError
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -29,11 +31,13 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 def run_agent_investigation(
     payload: AgentInvestigationRequest,
     service: AgentInvestigationService = Depends(get_agent_service),
+    db: Session = Depends(get_sync_db),
 ) -> AgentInvestigationResponse:
     """Trigger a new AI agent investigation for a transaction."""
     try:
         return service.investigate(
             transaction_id=payload.transaction_id,
+            session=db,
             max_steps=payload.max_steps,
         )
     except TransactionNotFoundError as exc:
@@ -58,9 +62,10 @@ def run_agent_investigation(
 def get_agent_investigation(
     investigation_id: str,
     service: AgentInvestigationService = Depends(get_agent_service),
+    db: Session = Depends(get_sync_db),
 ) -> AgentInvestigationResponse:
     """Retrieve an existing agent investigation result."""
-    result = service.get_investigation_by_id(investigation_id)
+    result = service.get_investigation_by_id(investigation_id, session=db)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

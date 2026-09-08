@@ -212,19 +212,47 @@ class PgVectorVectorStore(BaseVectorStore):
             return 0
 
     def clear(self) -> None:
-        """Remove all chunks from database table."""
+        """Remove all chunks and documents from database table."""
         try:
             with self._engine.begin() as conn:
-                conn.execute(text("TRUNCATE TABLE rag_document_chunks CASCADE;"))
+                conn.execute(text("TRUNCATE TABLE rag_document_chunks, rag_documents CASCADE;"))
         except Exception as exc:
             logger.warning(f"Failed to clear pgvector chunks: {exc}")
 
+    def delete_by_document_id(self, document_id: str) -> int:
+        """Remove document and its cascading chunks from database table."""
+        try:
+            with self._engine.begin() as conn:
+                res = conn.execute(
+                    text("DELETE FROM rag_documents WHERE id = :doc_id;"),
+                    {"doc_id": document_id},
+                )
+                return int(res.rowcount or 0)
+        except Exception as exc:
+            logger.warning(f"Failed to delete document {document_id}: {exc}")
+            return 0
+
     def upsert(self, records: list[VectorRecord]) -> int:
-        """Upsert records into rag_document_chunks with embedding vector."""
+        """Upsert records into rag_documents and rag_document_chunks with embedding vector."""
         if not records:
             return 0
 
-        upsert_stmt = text(
+        upsert_doc_stmt = text(
+            """
+            INSERT INTO rag_documents (id, title, document_type, category, source_path, content_hash, raw_content, metadata_json)
+            VALUES (:id, :title, :document_type, :category, :source_path, :content_hash, :raw_content, :metadata_json)
+            ON CONFLICT (id) DO UPDATE SET
+                title = EXCLUDED.title,
+                document_type = EXCLUDED.document_type,
+                category = EXCLUDED.category,
+                source_path = EXCLUDED.source_path,
+                content_hash = EXCLUDED.content_hash,
+                metadata_json = EXCLUDED.metadata_json,
+                updated_at = NOW();
+            """
+        )
+
+        upsert_chunk_stmt = text(
             """
             INSERT INTO rag_document_chunks (id, document_id, chunk_index, content, metadata_json, embedding)
             VALUES (:id, :document_id, :chunk_index, :content, :metadata_json, :embedding)
@@ -235,12 +263,32 @@ class PgVectorVectorStore(BaseVectorStore):
             """
         )
 
+        seen_doc_ids: set[str] = set()
         with self._engine.begin() as conn:
             for r in records:
+                if r.document_id not in seen_doc_ids:
+                    meta = r.metadata or {}
+                    conn.execute(
+                        upsert_doc_stmt,
+                        {
+                            "id": r.document_id,
+                            "title": str(meta.get("title") or r.document_id)[:255],
+                            "document_type": str(meta.get("doc_type") or "general")[:64],
+                            "category": str(meta.get("category") or "general")[:64],
+                            "source_path": str(
+                                meta.get("relative_path") or meta.get("source_path") or ""
+                            )[:512],
+                            "content_hash": str(meta.get("content_hash") or "")[:64],
+                            "raw_content": str(meta.get("raw_content") or r.content),
+                            "metadata_json": json.dumps(meta),
+                        },
+                    )
+                    seen_doc_ids.add(r.document_id)
+
                 # Format embedding vector as literal array string e.g. '[0.1, 0.2, ...]'
                 emb_str = f"[{','.join(f'{x:.6f}' for x in r.embedding)}]"
                 conn.execute(
-                    upsert_stmt,
+                    upsert_chunk_stmt,
                     {
                         "id": r.chunk_id,
                         "document_id": r.document_id,
