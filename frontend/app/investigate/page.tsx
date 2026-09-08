@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout";
@@ -13,6 +13,7 @@ import {
   EvidenceCard,
   PolicyDecisionCard,
   LoadingState,
+  ErrorState,
   formatINR,
 } from "@/components/ui";
 import { FraudGraph } from "@/components/fraud-graph";
@@ -45,37 +46,45 @@ import {
 
 function InvestigateContent() {
   const searchParams = useSearchParams();
-  const initialTx = searchParams.get("tx") || "txn_00001";
+  const txParam = searchParams.get("tx");
+  const initialTx = txParam || "tx_0001991";
   const [txIdInput, setTxIdInput] = useState(initialTx);
   const [activeTxId, setActiveTxId] = useState(initialTx);
 
+  useEffect(() => {
+    if (txParam && txParam !== activeTxId) {
+      setActiveTxId(txParam);
+      setTxIdInput(txParam);
+    }
+  }, [txParam, activeTxId]);
+
   // 1. Transaction Raw Record
-  const transaction = useAsync<Transaction | null>(
-    () => (activeTxId ? fetchTransaction(activeTxId).catch(() => null) : Promise.resolve(null)),
+  const transaction = useAsync<Transaction>(
+    () => fetchTransaction(activeTxId),
     [activeTxId]
   );
 
   // 2. Transaction Subgraph
-  const graph = useAsync<GraphData | null>(
-    () => (activeTxId ? fetchTransactionGraph(activeTxId, 2).catch(() => null) : Promise.resolve(null)),
+  const graph = useAsync<GraphData>(
+    () => fetchTransactionGraph(activeTxId, 2),
     [activeTxId]
   );
 
   // 3. Phase 3 XAI & Entity Investigation
-  const investigation = useAsync<InvestigationResponse | null>(
-    () => (activeTxId ? createInvestigation(activeTxId).catch(() => null) : Promise.resolve(null)),
+  const investigation = useAsync<InvestigationResponse>(
+    () => createInvestigation(activeTxId),
     [activeTxId]
   );
 
   // 4. Phase 5 LangGraph Autonomous Agent
   const agent = useAsync<AgentInvestigationResponse | null>(
-    () => (activeTxId ? createAgentInvestigation(activeTxId).catch(() => null) : Promise.resolve(null)),
+    () => createAgentInvestigation(activeTxId).catch(() => null),
     [activeTxId]
   );
 
   // 5. Phase 5 Deterministic Policy Decision
   const policy = useAsync<PolicyDecision | null>(
-    () => (activeTxId ? evaluatePolicy(activeTxId).catch(() => null) : Promise.resolve(null)),
+    () => evaluatePolicy(activeTxId).catch(() => null),
     [activeTxId]
   );
 
@@ -94,7 +103,13 @@ function InvestigateContent() {
 
   const riskScore = inv?.risk_score ?? tx?.risk_score ?? 0;
   const riskLevel = inv?.risk_level ?? tx?.risk_level ?? "low";
-  const policyAction = policyData?.action ?? (riskScore >= 0.85 ? "HOLD" : riskScore >= 0.37 ? "REVIEW" : "ALLOW");
+  const policyAction =
+    policyData?.action ??
+    (riskScore >= 0.90 || (riskScore >= 0.70 && Boolean(tx?.cluster_id))
+      ? "HOLD"
+      : riskScore >= 0.37
+      ? "REVIEW"
+      : "ALLOW");
 
   return (
     <div className="space-y-8">
@@ -114,7 +129,7 @@ function InvestigateContent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5E616E]" />
             <input
               type="text"
-              placeholder="txn_00001"
+              placeholder="tx_0001991"
               value={txIdInput}
               onChange={(e) => setTxIdInput(e.target.value)}
               className="pl-9 pr-3 py-1.5 text-xs bg-[#121317] border border-[#1C1D22] rounded-md font-mono text-[#E2E3E9] placeholder-[#5E616E] focus:outline-none focus:border-[#CC9166] w-48 sm:w-64 transition-colors"
@@ -130,47 +145,62 @@ function InvestigateContent() {
         </form>
       </div>
 
-      {/* Primary Investigation Header */}
-      <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-6 relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-mono text-[#5E616E] uppercase">TRANSACTION /</span>
-              <span className="text-sm font-mono font-semibold text-white tracking-wider">
-                {activeTxId}
-              </span>
-              <RiskBadge level={riskLevel} size="sm" />
-            </div>
-            <div className="text-xs text-[#9194A1] font-sans">
-              Full-stack forensic correlation across ML features, network graph, vector RAG, and policy rules.
+      {/* Loading & Error States */}
+      {transaction.status === "loading" && (
+        <LoadingState message={`Investigating transaction ${activeTxId}...`} />
+      )}
+
+      {transaction.status === "error" && (
+        <ErrorState
+          title="TRANSACTION NOT FOUND"
+          error={`Transaction "${activeTxId}" was not found in the dataset or graph. Please verify the ID (e.g. tx_0001991).`}
+          onRetry={transaction.refetch}
+        />
+      )}
+
+      {transaction.status === "success" && tx && (
+        <>
+          {/* Primary Investigation Header */}
+          <div className="bg-[#040406] border border-[#1C1D22] rounded-lg p-6 relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-mono text-[#5E616E] uppercase">TRANSACTION /</span>
+                  <span className="text-sm font-mono font-semibold text-white tracking-wider">
+                    {activeTxId}
+                  </span>
+                  <RiskBadge level={riskLevel} size="sm" />
+                </div>
+                <div className="text-xs text-[#9194A1] font-sans">
+                  Full-stack forensic correlation across ML features, network graph, vector RAG, and policy rules.
+                </div>
+              </div>
+
+              <div className="flex items-center gap-8 self-start md:self-auto border-t md:border-t-0 border-[#1C1D22] pt-4 md:pt-0">
+                {/* Editorial Serif Score */}
+                <div>
+                  <div className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">
+                    RISK SCORE
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-serif tracking-tight text-white leading-none mt-1">
+                    {riskScore.toFixed(3)}
+                  </div>
+                </div>
+
+                <div className="h-10 w-[1px] bg-[#1C1D22]" />
+
+                {/* Policy State */}
+                <div>
+                  <div className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">
+                    POLICY STATE
+                  </div>
+                  <div className="mt-1">
+                    <DecisionBadge action={policyAction} size="md" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-8 self-start md:self-auto border-t md:border-t-0 border-[#1C1D22] pt-4 md:pt-0">
-            {/* Editorial Serif Score */}
-            <div>
-              <div className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">
-                RISK SCORE
-              </div>
-              <div className="text-4xl sm:text-5xl font-serif tracking-tight text-white leading-none mt-1">
-                {riskScore.toFixed(3)}
-              </div>
-            </div>
-
-            <div className="h-10 w-[1px] bg-[#1C1D22]" />
-
-            {/* Policy State */}
-            <div>
-              <div className="text-[10px] font-mono text-[#777A88] uppercase tracking-wider">
-                POLICY STATE
-              </div>
-              <div className="mt-1">
-                <DecisionBadge action={policyAction} size="md" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Visual Centerpiece: Desktop 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -185,10 +215,6 @@ function InvestigateContent() {
                 Transaction Facts
               </h3>
             </div>
-
-            {transaction.status === "loading" && (
-              <div className="py-6 text-center text-xs text-[#777A88]">Loading facts...</div>
-            )}
 
             {tx && (
               <div className="space-y-3.5 text-xs font-sans">
@@ -519,6 +545,8 @@ function InvestigateContent() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout";
@@ -40,8 +40,16 @@ function generateAuditHash(txId: string, score: number, timestamp: string = ""):
 
 function AuditContent() {
   const searchParams = useSearchParams();
-  const [searchTx, setSearchTx] = useState(searchParams.get("tx") || "");
-  const [expandedTxId, setExpandedTxId] = useState<string | null>(searchParams.get("tx") || null);
+  const txParam = searchParams.get("tx");
+  const [searchTx, setSearchTx] = useState(txParam || "");
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(txParam || null);
+
+  useEffect(() => {
+    if (txParam) {
+      setSearchTx(txParam);
+      setExpandedTxId(txParam);
+    }
+  }, [txParam]);
 
   // Fetch candidate audit transactions
   const txData = useAsync<TransactionsResponse>(
@@ -96,7 +104,7 @@ function AuditContent() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5E616E]" />
           <input
             type="text"
-            placeholder="Audit lookup by transaction ID (e.g. txn_00001)..."
+            placeholder="Audit lookup by transaction ID (e.g. tx_0001991)..."
             value={searchTx}
             onChange={(e) => setSearchTx(e.target.value)}
             onKeyDown={(e) => {
@@ -152,7 +160,11 @@ function AuditContent() {
                     tx.timestamp
                   );
                   const decisionAction =
-                    tx.risk_score >= 0.85 || tx.is_fraud ? "HOLD" : tx.risk_score >= 0.37 ? "REVIEW" : "ALLOW";
+                    tx.risk_score >= 0.90 || (tx.risk_score >= 0.70 && Boolean(tx.cluster_id))
+                      ? "HOLD"
+                      : tx.risk_score >= 0.37
+                      ? "REVIEW"
+                      : "ALLOW";
 
                   return (
                     <React.Fragment key={tx.transaction_id}>
@@ -188,7 +200,7 @@ function AuditContent() {
                         </td>
 
                         <td className="py-3 px-3 font-mono text-[11px] text-[#9194A1]">
-                          inv_{tx.transaction_id.replace("txn_", "")}
+                          inv_{tx.transaction_id.replace(/^tx_?/, "")}
                         </td>
 
                         <td className="py-3 px-4">
