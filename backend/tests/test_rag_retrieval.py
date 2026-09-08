@@ -87,8 +87,12 @@ def test_pgvector_store_semantics_and_degraded_fallback() -> None:
     pg_store = PgVectorVectorStore()
     assert pg_store.store_name == "postgresql_pgvector"
     assert pg_store.is_degraded is False
-    # When PostgreSQL container is offline, is_available returns False cleanly
-    assert pg_store.is_available() is False
+
+    # When PostgreSQL host is unreachable, is_available returns False cleanly
+    bad_pg_store = PgVectorVectorStore(
+        connection_url="postgresql://invalid:invalid@127.0.0.1:54339/nonexistent"
+    )
+    assert bad_pg_store.is_available() is False
 
     mem_store = InMemoryVectorStore()
     assert mem_store.store_name == "in_memory_fallback"
